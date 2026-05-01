@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./Navbar.scss";
 
 const ChatFrameLogo = () => (
@@ -49,7 +50,7 @@ const Navbar = () => {
       {/* Actions */}
       <div className="navbar__actions">
         <a href="#" className="navbar__btn navbar__btn--login">Login</a>
-        <a href="#" className="navbar__btn navbar__btn--signup">Sign Up</a>
+        <Link to="/onboarding" className="navbar__btn navbar__btn--signup">Sign Up</Link>
       </div>
     </nav>
   );
