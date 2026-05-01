@@ -49,7 +49,7 @@ const Navbar = () => {
 
       {/* Actions */}
       <div className="navbar__actions">
-        <a href="#" className="navbar__btn navbar__btn--login">Login</a>
+        <Link to="/login" className="navbar__btn navbar__btn--login">Login</Link>
         <Link to="/onboarding" className="navbar__btn navbar__btn--signup">Sign Up</Link>
       </div>
     </nav>
