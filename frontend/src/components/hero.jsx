@@ -53,7 +53,10 @@ const Hero = () => {
           <div className="hero__ctas">
             <a href="#" className="hero__cta hero__cta--primary">
               Start for free
-              <ArrowIcon />
+              <span className="hero__cta-arrow">
+                <span className="hero__cta-arrow-default"><ArrowIcon /></span>
+                <span className="hero__cta-arrow-hover"><ArrowIcon /></span>
+              </span>
             </a>
             <a href="#" className="hero__cta hero__cta--secondary">
               See how it works

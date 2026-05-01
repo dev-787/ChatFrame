@@ -175,6 +175,49 @@
     }
   }
 
+  // ── CTA arrow animation ──
+  &__cta-arrow {
+    display: inline-flex;
+    overflow: hidden;
+    width: 14px;
+    height: 14px;
+    position: relative;
+  }
+
+  &__cta-arrow-default,
+  &__cta-arrow-hover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 14px;
+    height: 14px;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &__cta-arrow-default {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  &__cta-arrow-hover {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  &__cta--primary:hover &__cta-arrow-default {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  &__cta--primary:hover &__cta-arrow-hover {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
   // ── Stats ──
   &__stats {
     display: flex;

@@ -49,8 +49,18 @@ const Navbar = () => {
 
       {/* Actions */}
       <div className="navbar__actions">
-        <Link to="/login" className="navbar__btn navbar__btn--login">Login</Link>
-        <Link to="/onboarding" className="navbar__btn navbar__btn--signup">Sign Up</Link>
+        <Link to="/login" className="navbar__btn navbar__btn--login">
+          <span className="navbar__btn-inner">
+            <span className="navbar__btn-top">Login</span>
+            <span className="navbar__btn-bottom">Login</span>
+          </span>
+        </Link>
+        <Link to="/onboarding" className="navbar__btn navbar__btn--signup">
+          <span className="navbar__btn-inner">
+            <span className="navbar__btn-top">Sign Up</span>
+            <span className="navbar__btn-bottom">Sign Up</span>
+          </span>
+        </Link>
       </div>
     </nav>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Onboarding.scss";
+import Logo from "../Logo/Logo";
 import RoleSelect from "./steps/RoleSelect";
 import AccountDetails from "./steps/AccountDetails";
 import CompanyIdentity from "./steps/business/CompanyIdentity";
@@ -84,18 +85,7 @@ const Onboarding = () => {
       </div>
 
       {/* Logo */}
-      <a href="/" className="onboarding__logo">
-        <svg viewBox="0 0 28 28" fill="none" width="24" height="24">
-          <rect x="1" y="1" width="26" height="26" rx="7" stroke="rgba(255,255,255,0.18)" strokeWidth="1"/>
-          <rect x="4" y="4" width="20" height="20" rx="5" fill="rgba(255,255,255,0.06)"/>
-          <path d="M8 9.5C8 8.67 8.67 8 9.5 8h9C19.33 8 20 8.67 20 9.5v6c0 .83-.67 1.5-1.5 1.5H15l-3 2.5V17H9.5C8.67 17 8 16.33 8 15.5V9.5z" fill="white" opacity="0.9"/>
-          <circle cx="11" cy="12.5" r="1" fill="#0F0F0F"/>
-          <circle cx="14" cy="12.5" r="1" fill="#0F0F0F"/>
-          <circle cx="17" cy="12.5" r="1" fill="#0F0F0F"/>
-        </svg>
-        <span className="onboarding__logo-chat">Chat</span>
-        <span className="onboarding__logo-frame">Frame</span>
-      </a>
+      <Logo href="/" className="logo--fixed" />
 
       {/* Card */}
       <div className="onboarding__card">

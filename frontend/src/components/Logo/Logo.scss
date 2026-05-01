@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+  color: #fafafa;
+
+  &--fixed {
+    position: fixed;
+    top: 20px;
+    left: 28px;
+    z-index: 10;
+  }
+
+  &__icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    opacity: 0.95;
+  }
+
+  &__wordmark {
+    display: flex;
+    align-items: baseline;
+    line-height: 1;
+  }
+
+  &__chat {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.4px;
+    color: #fafafa;
+    text-decoration: none;
+  }
+
+  &__frame {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 18px;
+    font-style: italic;
+    letter-spacing: -0.2px;
+    color: #fafafa;
+    opacity: 0.88;
+    text-decoration: none;
+  }
+}

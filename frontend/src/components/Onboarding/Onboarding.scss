@@ -69,36 +69,6 @@ $green:          rgba(160, 255, 180, 0.85);
     -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black 20%, transparent 100%);
   }
 
-  // ── Logo ──
-  &__logo {
-    position: fixed;
-    top: 20px;
-    left: 28px;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    text-decoration: none;
-  }
-
-  &__logo-chat {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: -0.4px;
-    color: $text;
-  }
-
-  &__logo-frame {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 500;
-    font-size: 17px;
-    font-style: italic;
-    letter-spacing: -0.2px;
-    color: $text;
-    opacity: 0.88;
-  }
-
   // ── Card ──
   &__card {
     position: relative;
