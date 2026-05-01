@@ -26,17 +26,6 @@ const ROLES = [
     label: "Support Agent",
     description: "Join your company's workspace and start resolving customer queries.",
   },
-  {
-    id: "customer",
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <path d="M4 6h20v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M4 6l10 9 10-9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: "Customer",
-    description: "Get quick, AI-assisted help from the brands you love.",
-  },
 ];
 
 const RoleSelect = ({ onNext }) => {

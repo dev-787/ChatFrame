@@ -6,7 +6,6 @@ import AccountDetails from "./steps/AccountDetails";
 import CompanyIdentity from "./steps/business/CompanyIdentity";
 import CompanyDetails from "./steps/business/CompanyDetails";
 import SupportConfig from "./steps/business/SupportConfig";
-import CustomerSupport from "./steps/customer/CustomerSupport";
 import JoinCompany from "./steps/agent/JoinCompany";
 
 const FLOW_MAP = {
@@ -21,11 +20,6 @@ const FLOW_MAP = {
     { component: RoleSelect,     title: "Who are you?",        subtitle: "Choose how you'll be using ChatFrame." },
     { component: AccountDetails, title: "Create your account", subtitle: "You're one step away from smarter support." },
     { component: JoinCompany,    title: "Join your team",      subtitle: "Connect with your company's workspace." },
-  ],
-  customer: [
-    { component: RoleSelect,      title: "Who are you?",         subtitle: "Choose how you'll be using ChatFrame." },
-    { component: AccountDetails,  title: "Create your account",  subtitle: "You're almost there." },
-    { component: CustomerSupport, title: "What do you need?",    subtitle: "Tell us what you need help with." },
   ],
 };
 

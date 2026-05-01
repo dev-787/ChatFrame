@@ -15,12 +15,42 @@ const EyeIcon = ({ open }) =>
     </svg>
   );
 
+const LOGIN_ROLES = [
+  {
+    id: "business",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+        <rect x="3" y="8" width="22" height="17" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M9 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M3 14h22" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+        <circle cx="14" cy="14" r="2" fill="currentColor"/>
+      </svg>
+    ),
+    label: "Company Owner",
+    description: "Sign in to manage your workspace and team.",
+  },
+  {
+    id: "agent",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="10" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M5 24c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M19 16l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    label: "Support Agent",
+    description: "Sign in to your company's support workspace.",
+  },
+];
+
 const Login = () => {
-  const [form, setForm]       = useState({ email: "", password: "" });
-  const [showPw, setShowPw]   = useState(false);
-  const [errors, setErrors]   = useState({});
-  const [loading, setLoading] = useState(false);
-  const [done, setDone]       = useState(false);
+  const [role, setRole]         = useState(null);
+  const [step, setStep]         = useState("role"); // 'role' | 'form'
+  const [form, setForm]         = useState({ email: "", password: "" });
+  const [showPw, setShowPw]     = useState(false);
+  const [errors, setErrors]     = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [done, setDone]         = useState(false);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -36,7 +66,6 @@ const Login = () => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    // TODO: replace with real API call
     await new Promise((r) => setTimeout(r, 1400));
     setLoading(false);
     setDone(true);
@@ -58,15 +87,71 @@ const Login = () => {
       <div className="login__card">
         {done ? (
           <SuccessState email={form.email} />
+        ) : step === "role" ? (
+          <>
+            <div className="login__header">
+              <h1 className="login__title">Welcome back</h1>
+              <p className="login__subtitle">Who are you signing in as?</p>
+            </div>
+            <div className="login__roles">
+              {LOGIN_ROLES.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`role-card ${role === r.id ? "role-card--active" : ""}`}
+                  onClick={() => setRole(r.id)}
+                >
+                  <div className="role-card__icon">{r.icon}</div>
+                  <div className="role-card__body">
+                    <span className="role-card__label">{r.label}</span>
+                    <span className="role-card__desc">{r.description}</span>
+                  </div>
+                  <div className="role-card__check">
+                    {role === r.id && (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="7" fill="#fafafa"/>
+                        <path d="M4 7l2 2 4-4" stroke="#0f0f0f" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              className={`login__submit ${!role ? "login__submit--disabled" : ""}`}
+              type="button"
+              disabled={!role}
+              onClick={() => role && setStep("form")}
+            >
+              Continue
+              <span className="login__arrow">
+                <span className="login__arrow-default">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="login__arrow-hover">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              </span>
+            </button>
+          </>
         ) : (
           <>
             <div className="login__header">
+              <button className="login__back" type="button" onClick={() => setStep("role")}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M11 7H3M6 4L3 7l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back
+              </button>
               <h1 className="login__title">Welcome back</h1>
               <p className="login__subtitle">Sign in to your ChatFrame workspace.</p>
             </div>
 
             <form className="login__form" onSubmit={handleSubmit} noValidate>
-              {/* Email */}
               <div className={`lf ${errors.email ? "lf--error" : ""}`}>
                 <label>Email address</label>
                 <input
@@ -80,7 +165,6 @@ const Login = () => {
                 {errors.email && <span className="lf__error">{errors.email}</span>}
               </div>
 
-              {/* Password */}
               <div className={`lf lf--password ${errors.password ? "lf--error" : ""}`}>
                 <div className="lf__label-row">
                   <label>Password</label>
@@ -99,10 +183,9 @@ const Login = () => {
                 {errors.password && <span className="lf__error">{errors.password}</span>}
               </div>
 
-              {/* Submit */}
               <button
                 type="submit"
-                className={`login__submit ${loading ? "login__submit--loading" : ""}`}
+                className={`login__submit login__submit--full ${loading ? "login__submit--loading" : ""}`}
                 disabled={loading}
               >
                 {loading ? (
@@ -130,7 +213,6 @@ const Login = () => {
         )}
       </div>
 
-      {/* Sign up link */}
       {!done && (
         <p className="login__footer">
           Don't have an account?{" "}
