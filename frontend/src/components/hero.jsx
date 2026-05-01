@@ -1,5 +1,7 @@
 import React from "react";
 import "./hero.scss";
+import heroBaseLayer from "../assets/hero-base-layer.svg";
+import heroAgent from "../assets/hero-agent.png";
 
 const ArrowIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -76,6 +78,22 @@ const Hero = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Right visual — desktop only */}
+      <div className="hero__right">
+        <img
+          src={heroBaseLayer}
+          alt=""
+          className="hero__visual"
+          aria-hidden="true"
+        />
+        <img
+          src={heroAgent}
+          alt=""
+          className="hero__agent"
+          aria-hidden="true"
+        />
       </div>
     </section>
   );

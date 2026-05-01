@@ -79,9 +79,18 @@ const RoleSelect = ({ onNext }) => {
         disabled={!selected}
       >
         Continue
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <span className="ob-arrow">
+          <span className="ob-arrow__default">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+          <span className="ob-arrow__hover">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </span>
       </button>
     </div>
   );

@@ -441,6 +441,68 @@ $green:          rgba(160, 255, 180, 0.85);
   margin-top: 28px;
 }
 
+// ── Arrow animation ──
+.ob-arrow {
+  display: inline-flex;
+  overflow: hidden;
+  width: 14px;
+  height: 14px;
+  position: relative;
+  flex-shrink: 0;
+
+  &__default,
+  &__hover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity  0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &__default {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  &__hover {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.ob-btn--primary:hover .ob-arrow__default {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.ob-btn--primary:hover .ob-arrow__hover {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+// Back button — arrow slides right-to-left
+.ob-arrow--back .ob-arrow__default {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.ob-arrow--back .ob-arrow__hover {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.ob-btn--ghost:hover .ob-arrow--back .ob-arrow__default {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.ob-btn--ghost:hover .ob-arrow--back .ob-arrow__hover {
+  transform: translateX(0);
+  opacity: 1;
+}
+
 // ──────────────────────────────────────────────────────
 // ROLE SELECT
 // ──────────────────────────────────────────────────────

@@ -171,6 +171,47 @@ $green:        rgba(160, 255, 180, 0.85);
     }
   }
 
+  // ── Arrow animation ──
+  &__arrow {
+    display: inline-flex;
+    overflow: hidden;
+    width: 14px;
+    height: 14px;
+    position: relative;
+    flex-shrink: 0;
+
+    &-default,
+    &-hover {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity  0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &-default {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    &-hover {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+
+  &__submit:hover &__arrow-default {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  &__submit:hover &__arrow-hover {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
   // ── Spinner ──
   &__spinner {
     width: 16px;
