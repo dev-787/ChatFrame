@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./hero.scss";
 import heroBaseLayer from "../assets/hero-base-layer.svg";
 import heroAgent from "../assets/hero-agent.png";
@@ -21,6 +21,48 @@ const PlayIcon = () => (
     <path d="M6 5l3 2-3 2V5z" fill="rgba(250,250,250,0.55)" />
   </svg>
 );
+
+// Parses "10x" → { value: 10, suffix: "x" }
+// "98%" → { value: 98, suffix: "%" }
+// "40+" → { value: 40, suffix: "+" }
+const parseStat = (str) => {
+  const match = str.match(/^(\d+)(.*)$/);
+  return match ? { value: parseInt(match[1], 10), suffix: match[2] } : { value: 0, suffix: str };
+};
+
+const AnimatedStat = ({ num, delay = 0 }) => {
+  const { value, suffix } = parseStat(num);
+  const [display, setDisplay] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const duration = 1200;
+          const startTime = performance.now();
+          const tick = (now) => {
+            const elapsed = now - startTime - delay * 1000;
+            if (elapsed < 0) { requestAnimationFrame(tick); return; }
+            const progress = Math.min(elapsed / duration, 1);
+            // ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplay(Math.round(eased * value));
+            if (progress < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [value, delay]);
+
+  return <span ref={ref} className="hero__stat-num">{display}{suffix}</span>;
+};
 
 const STATS = [
   { num: "10x", label: "Faster resolution" },
@@ -71,7 +113,7 @@ const Hero = () => {
               <React.Fragment key={stat.num}>
                 {i !== 0 && <div className="hero__stat-divider" />}
                 <div className="hero__stat">
-                  <span className="hero__stat-num">{stat.num}</span>
+                  <AnimatedStat num={stat.num} delay={0.54 + i * 0.1} />
                   <span className="hero__stat-label">{stat.label}</span>
                 </div>
               </React.Fragment>

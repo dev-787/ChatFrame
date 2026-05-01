@@ -1,0 +1,47 @@
+$black: #020202;
+$panel: #0f0f0f;
+$side: clamp(80px, 12vw, 220px);
+
+.hiw {
+  background: $black;
+  padding: 0 $side clamp(60px, 8vw, 120px);
+  position: relative;
+
+  // ── Center panel ──
+  &__panel {
+    background: $panel;
+    position: relative;
+    overflow: hidden;
+    min-height: 85vh;
+    padding: clamp(60px, 8vw, 120px) clamp(32px, 5vw, 80px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0 0 40px 40px;
+  }
+
+  // ── Grid texture ──
+  &__grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(
+      ellipse 80% 60% at 50% 30%,
+      black 20%,
+      transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse 80% 60% at 50% 30%,
+      black 20%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  // ── Mobile ──
+  @media (max-width: 768px) {
+    padding: 0 16px 40px;
+    &__panel { padding: 60px 24px; }
+  }
+}

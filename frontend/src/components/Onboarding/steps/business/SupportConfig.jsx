@@ -1,15 +1,4 @@
-import React, { useState } from "react";
-
-const QUERY_TYPES = [
-  "Billing & Payments",
-  "Orders & Delivery",
-  "Refunds & Returns",
-  "Account & Access",
-  "Technical Support",
-  "Product Queries",
-  "Complaints",
-  "General Enquiries",
-];
+import { useState } from "react";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => {
   const h = i % 12 || 12;
@@ -24,43 +13,16 @@ const ChevronIcon = () => (
 );
 
 const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish }) => {
-  const [selectedTypes, setSelectedTypes] = useState(formData.queryTypes || []);
   const f = formData;
   const set = (key) => (e) => updateForm({ [key]: e.target.value });
 
-  const toggleType = (type) => {
-    const next = selectedTypes.includes(type)
-      ? selectedTypes.filter(t => t !== type)
-      : [...selectedTypes, type];
-    setSelectedTypes(next);
-    updateForm({ queryTypes: next });
-  };
-
   const handleSubmit = () => {
-    updateForm({ queryTypes: selectedTypes });
     if (isLast) onFinish();
     else onNext();
   };
 
   return (
     <div className="support-config">
-      {/* Query types */}
-      <div className="ob-field">
-        <label>Types of queries you handle</label>
-        <div className="pill-grid">
-          {QUERY_TYPES.map(type => (
-            <button
-              key={type}
-              type="button"
-              className={`pill ${selectedTypes.includes(type) ? "pill--active" : ""}`}
-              onClick={() => toggleType(type)}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Support hours */}
       <div className="ob-field">
         <label>Support hours</label>

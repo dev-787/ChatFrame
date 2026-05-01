@@ -71,12 +71,28 @@
     text-align: left;
     gap: 28px;
     width: 100%;
-    animation: heroFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 
-    @keyframes heroFadeUp {
-      from { opacity: 0; transform: translateY(24px); }
+    @keyframes heroSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    @keyframes heroFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    // Stagger each direct child
+    & > * {
+      opacity: 0;
+      animation: heroSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    & > *:nth-child(1) { animation-delay: 0.05s; }  // badge
+    & > *:nth-child(2) { animation-delay: 0.18s; }  // headline
+    & > *:nth-child(3) { animation-delay: 0.30s; }  // subtext
+    & > *:nth-child(4) { animation-delay: 0.42s; }  // CTAs
+    & > *:nth-child(5) { animation-delay: 0.54s; }  // stats
   }
 
   // ── Badge ──
@@ -277,7 +293,6 @@
     align-items: center;
     justify-content: center;
     padding: 80px clamp(16px, 3vw, 48px);
-    animation: heroFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
   }
 
   // Stacking wrapper — both images sit inside this
