@@ -118,7 +118,6 @@ const TheWorkspace = () => {
 
         {/* Capsule — top left */}
         <div className="workspace__capsule">
-          <span className="workspace__capsule-dot" />
           The Workspace
         </div>
 

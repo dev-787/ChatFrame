@@ -75,8 +75,7 @@ $curve  : 40px;
   z-index: 4;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 16px 7px 12px;
+  padding: 7px 16px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 100px;
@@ -95,21 +94,6 @@ $curve  : 40px;
     left: unset;
     margin-bottom: 32px;
     display: flex;
-  }
-}
-
-.workspace__capsule-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: $green;
-  box-shadow: 0 0 5px rgba(100, 255, 140, 0.5);
-  flex-shrink: 0;
-  animation: pulse 2.4s ease-in-out infinite;
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
   }
 }
 
