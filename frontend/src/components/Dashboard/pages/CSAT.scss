@@ -1,0 +1,12 @@
+.csat {
+  &__review {
+    &--negative {
+      background: rgba(255,100,100,0.04);
+      border-color: rgba(255,100,100,0.15);
+    }
+  }
+  &__review-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  &__review-name   { font-size:13px; font-weight:600; color:var(--text); }
+  &__stars         { font-size:13px; color:var(--yellow); letter-spacing:1px; }
+  &__review-text   { font-size:13px; color:var(--text-2); font-style:italic; line-height:1.6; }
+}
