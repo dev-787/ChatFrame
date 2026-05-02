@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './TheWorkspace.scss';
 import agentWork from '../../assets/agent-work.png';
+import agentSkeleton from '../../assets/agent-skeleton.svg';
 
 const ROLES = [
   {
@@ -60,6 +61,48 @@ const useTypewriter = () => {
   return { displayed, roleIndex, showCursor };
 };
 
+// ── X-ray scanner overlay ─────────────────────────────
+const XRayScanner = () => (
+  <div className="xray" aria-hidden="true">
+
+    {/* Base agent image */}
+    <img
+      src={agentWork}
+      alt=""
+      className="xray__base"
+      draggable="false"
+    />
+
+    {/* Skeleton SVG — revealed by clip-path that follows scan line */}
+    <div className="xray__skeleton-wrap">
+      <img
+        src={agentSkeleton}
+        alt=""
+        className="xray__skeleton"
+        draggable="false"
+      />
+    </div>
+
+    {/* The scan line itself */}
+    <div className="xray__line">
+      {/* Glow head of the line */}
+      <div className="xray__line-glow" />
+    </div>
+
+    <svg
+  className="xray__dashes"
+  viewBox="0 0 220 400"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  preserveAspectRatio="xMidYMid meet"
+>
+
+</svg>
+
+  </div>
+);
+
+// ── Main component ────────────────────────────────────
 const TheWorkspace = () => {
   const { displayed, roleIndex, showCursor } = useTypewriter();
   const [activeDesc, setActiveDesc] = useState(0);
@@ -75,17 +118,13 @@ const TheWorkspace = () => {
 
         {/* Capsule — top left */}
         <div className="workspace__capsule">
+          <span className="workspace__capsule-dot" />
           The Workspace
         </div>
 
-        {/* Image — right side */}
+        {/* X-ray scanner — replaces plain image */}
         <div className="workspace__img-wrap">
-          <img
-            src={agentWork}
-            alt="Workspace preview"
-            className="workspace__img"
-            draggable="false"
-          />
+          <XRayScanner />
         </div>
 
         {/* Heading */}
