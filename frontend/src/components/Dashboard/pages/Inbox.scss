@@ -39,6 +39,23 @@
     input { font-size: 12.5px; }
   }
 
+  &__search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  &__search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-3);
+    z-index: 1;
+  }
+
+  &__search input {
+    padding-left: 32px;
+  }
+
   &__convo {
     display: flex;
     align-items: flex-start;
@@ -149,6 +166,9 @@
     text-transform: uppercase;
     color: var(--green);
     margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   &__msg-bubble {
@@ -240,6 +260,9 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   &__copilot-section { display: flex; flex-direction: column; gap: 8px; }

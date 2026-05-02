@@ -40,20 +40,65 @@ body {
 
 // ── Layout shell ────────────────────────────────────────
 .db {
-  display: flex;
+  position: relative;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background: var(--bg);
 
   &__main {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
-    min-width: 0;
     height: 100vh;
     overflow: hidden;
-    transition: margin-left 0.28s cubic-bezier(0.16,1,0.3,1);
+    padding-left: var(--sidebar-w);
+    transition: padding-left 0.28s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  // When sidebar is closed, reduce padding to expand content area
+  &--sidebar-closed &__main {
+    padding-left: 56px;
+  }
+
+  // Mobile behavior - overlay with blur
+  @media (max-width: 768px) {
+    &__main {
+      padding-left: 0;
+      transition: filter 0.28s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    &--sidebar-closed &__main {
+      padding-left: 0;
+    }
+
+    &--sidebar-open &__main {
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    // Backdrop for mobile
+    &__backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    &--sidebar-open &__backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   &__content {
@@ -79,6 +124,14 @@ body {
 // ── Shared utility classes used across pages ─────────────
 .db-page {
   max-width: 1200px;
+  transition: max-width 0.28s cubic-bezier(0.16,1,0.3,1);
+
+  // Expand max-width when sidebar is closed (desktop only)
+  @media (min-width: 769px) {
+    .db--sidebar-closed & {
+      max-width: 1400px;
+    }
+  }
 
   &__header {
     margin-bottom: 28px;

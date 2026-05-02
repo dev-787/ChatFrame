@@ -1,4 +1,5 @@
 .dash-home {
+
   &__card-header {
     display: flex;
     align-items: center;
@@ -12,50 +13,37 @@
     color: var(--text);
   }
 
-  &__chart-card { }
-
-  &__chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 140px;
-    padding-top: 8px;
+  &__chart-card {
+    // ensure recharts container has room
+    .recharts-responsive-container { display: block; }
   }
 
-  &__chart-col {
-    flex: 1;
+  &__left-col {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-    height: 100%;
+    gap: 14px;
   }
 
-  &__bar {
-    width: 100%;
-    background: rgba(255,255,255,0.07);
-    border-radius: 5px 5px 0 0;
-    transition: background 0.2s;
-    min-height: 4px;
-
-    &--highlight {
-      background: rgba(160,255,180,0.35);
-    }
+  &__right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
   }
 
-  &__day {
-    font-size: 10px;
-    color: var(--text-3);
-    letter-spacing: 0.03em;
-  }
-
+  // Insight
   &__insight {
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    background: rgba(160,255,180,0.04);
-    border-color: rgba(160,255,180,0.12);
+    background: rgba(160, 255, 180, 0.03);
+    border-color: rgba(160, 255, 180, 0.1) !important;
+
+    // Yellow variant
+    &--yellow {
+      background: rgba(255, 193, 7, 0.04);
+      border-color: rgba(255, 193, 7, 0.12) !important;
+    }
   }
 
   &__insight-icon {
@@ -63,15 +51,23 @@
     color: var(--green);
     flex-shrink: 0;
     margin-top: 1px;
+
+    &--yellow {
+      color: var(--yellow);
+    }
   }
 
   &__insight-title {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--green);
     margin-bottom: 5px;
+
+    &--yellow {
+      color: var(--yellow);
+    }
   }
 
   &__insight-text {
@@ -79,20 +75,27 @@
     line-height: 1.65;
     color: var(--text-2);
 
-    strong { color: var(--text); font-weight: 600; }
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+  }
+
+  // Activity
+  &__activity {
+    flex: 1;
   }
 
   &__activity-list {
     display: flex;
     flex-direction: column;
-    gap: 1px;
   }
 
   &__activity-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 0;
+    padding: 9px 0;
     border-bottom: 1px solid var(--border);
 
     &:last-child { border-bottom: none; }
@@ -116,5 +119,26 @@
     color: var(--text-3);
     white-space: nowrap;
     flex-shrink: 0;
+  }
+}
+
+// Shared tooltip used by both pages
+.chart-tooltip {
+  background: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: var(--font);
+
+  &__label {
+    font-size: 11px;
+    color: rgba(240, 240, 240, 0.45);
+    margin-bottom: 3px;
+  }
+
+  &__value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f0f0;
   }
 }

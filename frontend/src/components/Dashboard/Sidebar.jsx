@@ -1,39 +1,56 @@
 import './Sidebar.scss';
+import {
+  LayoutDashboard,
+  Inbox,
+  Ticket,
+  BarChart3,
+  Bot,
+  BookOpen,
+  Lightbulb,
+  MessageSquare,
+  Puzzle,
+  Users,
+  Bell,
+  Star,
+  CreditCard,
+  Settings,
+  User
+} from 'lucide-react';
 
 const NAV = [
   {
     group: 'OVERVIEW',
     items: [
-      { id: 'dashboard',    label: 'Dashboard',    icon: '⬡' },
-      { id: 'inbox',        label: 'Inbox',         icon: '◈', badge: 4 },
-      { id: 'tickets',      label: 'Tickets',       icon: '◻' },
-      { id: 'analytics',    label: 'Analytics',     icon: '◬' },
+      { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+      { id: 'inbox',        label: 'Inbox',         icon: Inbox, badge: 4 },
+      { id: 'tickets',      label: 'Tickets',       icon: Ticket },
+      { id: 'analytics',    label: 'Analytics',     icon: BarChart3 },
     ],
   },
   {
     group: 'AI & CHANNELS',
     items: [
-      { id: 'aiconfig',      label: 'AI Config',       icon: '◉' },
-      { id: 'knowledgebase', label: 'Knowledge Base',  icon: '◎' },
-      { id: 'aiinsights',    label: 'AI Insights',     icon: '◈' },
-      { id: 'chatwidget',    label: 'Chat Widget',     icon: '◌' },
-      { id: 'integrations',  label: 'Integrations',    icon: '⬡' },
+      { id: 'aiconfig',      label: 'AI Config',       icon: Bot },
+      { id: 'knowledgebase', label: 'Knowledge Base',  icon: BookOpen },
+      { id: 'aiinsights',    label: 'AI Insights',     icon: Lightbulb },
+      { id: 'chatwidget',    label: 'Chat Widget',     icon: MessageSquare },
+      { id: 'integrations',  label: 'Integrations',    icon: Puzzle },
     ],
   },
   {
     group: 'TEAM',
     items: [
-      { id: 'teamagents',   label: 'Team & Agents',   icon: '◎' },
-      { id: 'notifications',label: 'Notifications',   icon: '◌', badge: 2 },
-      { id: 'csat',         label: 'CSAT / Feedback', icon: '◈' },
+      { id: 'teamagents',   label: 'Team & Agents',   icon: Users },
+      { id: 'notifications',label: 'Notifications',   icon: Bell, badge: 2 },
+      { id: 'csat',         label: 'CSAT / Feedback', icon: Star },
     ],
   },
   {
     group: 'SETTINGS',
     items: [
-      { id: 'billing',     label: 'Billing',              icon: '◻' },
-      { id: 'orgsettings', label: 'Organization Settings', icon: '◉' },
-      { id: 'myprofile',   label: 'My Profile',           icon: '◎' },
+      { id: 'billing',     label: 'Billing',              icon: CreditCard },
+      { id: 'orgsettings', label: 'Organization Settings', icon: Settings },
+      { id: 'myprofile',   label: 'My Profile',           icon: User },
     ],
   },
 ];
@@ -69,22 +86,25 @@ const Sidebar = ({ activePage, setActivePage, open }) => {
             {open && (
               <span className="sidebar__group-label">{section.group}</span>
             )}
-            {section.items.map(item => (
-              <button
-                key={item.id}
-                className={`sidebar__item ${activePage === item.id ? 'sidebar__item--active' : ''}`}
-                onClick={() => setActivePage(item.id)}
-                title={!open ? item.label : undefined}
-              >
-                <span className="sidebar__item-icon">{item.icon}</span>
-                {open && (
-                  <span className="sidebar__item-label">{item.label}</span>
-                )}
-                {open && item.badge && (
-                  <span className="sidebar__item-badge">{item.badge}</span>
-                )}
-              </button>
-            ))}
+            {section.items.map(item => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  className={`sidebar__item ${activePage === item.id ? 'sidebar__item--active' : ''}`}
+                  onClick={() => setActivePage(item.id)}
+                  title={!open ? item.label : undefined}
+                >
+                  <IconComponent className="sidebar__item-icon" size={16} />
+                  {open && (
+                    <span className="sidebar__item-label">{item.label}</span>
+                  )}
+                  {open && item.badge && (
+                    <span className="sidebar__item-badge">{item.badge}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         ))}
       </nav>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Dashboard.scss';
 import Sidebar from './Sidebar';
 import DashboardNav from './DashboardNav';
@@ -37,6 +37,37 @@ const PAGES = {
 const Dashboard = () => {
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false); // Start with sidebar closed on mobile
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle page change - close sidebar on mobile
+  const handlePageChange = (page) => {
+    setActivePage(page);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
+  // Handle backdrop click - close sidebar on mobile
+  const handleBackdropClick = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   const PageComponent = PAGES[activePage] || DashboardHome;
 
@@ -44,10 +75,11 @@ const Dashboard = () => {
     <div className={`db ${sidebarOpen ? 'db--sidebar-open' : 'db--sidebar-closed'}`}>
       <Sidebar
         activePage={activePage}
-        setActivePage={setActivePage}
+        setActivePage={handlePageChange}
         open={sidebarOpen}
         setOpen={setSidebarOpen}
       />
+      {isMobile && <div className="db__backdrop" onClick={handleBackdropClick} />}
       <div className="db__main">
         <DashboardNav
           activePage={activePage}
