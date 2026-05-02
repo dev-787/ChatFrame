@@ -75,11 +75,6 @@ const Hero = () => {
     <section className="hero">
       <div className="hero__left">
         <div className="hero__content">
-          <div className="hero__badge">
-            <span className="hero__badge-dot" />
-            AI-powered customer support — now in beta
-          </div>
-
           <h1 className="hero__headline">
             Support that
             <br />
