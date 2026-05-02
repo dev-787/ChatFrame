@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [inboxCustomerId, setInboxCustomerId] = useState(null);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -62,6 +63,15 @@ const Dashboard = () => {
     }
   };
 
+  // Handle navigation from tickets to inbox
+  const handleNavigateToInbox = (customerId) => {
+    setInboxCustomerId(customerId);
+    setActivePage('inbox');
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
   // Handle backdrop click - close sidebar on mobile
   const handleBackdropClick = () => {
     if (isMobile) {
@@ -69,7 +79,17 @@ const Dashboard = () => {
     }
   };
 
-  const PageComponent = PAGES[activePage] || DashboardHome;
+  const renderPageComponent = () => {
+    switch (activePage) {
+      case 'tickets':
+        return <Tickets onNavigateToInbox={handleNavigateToInbox} />;
+      case 'inbox':
+        return <Inbox initialCustomerId={inboxCustomerId} />;
+      default:
+        const PageComponent = PAGES[activePage] || DashboardHome;
+        return <PageComponent />;
+    }
+  };
 
   return (
     <div className={`db ${sidebarOpen ? 'db--sidebar-open' : 'db--sidebar-closed'}`}>
@@ -87,7 +107,7 @@ const Dashboard = () => {
           setSidebarOpen={setSidebarOpen}
         />
         <div className="db__content">
-          <PageComponent />
+          {renderPageComponent()}
         </div>
       </div>
     </div>

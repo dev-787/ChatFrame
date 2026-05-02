@@ -1,6 +1,7 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/hero';
 import TheWorkspace from '../components/TheWorkspace/TheWorkspace';
+import FAQ from '../components/FAQ';
 import './Home.scss';
 
 const Home = () => {
@@ -9,6 +10,7 @@ const Home = () => {
       <Navbar />
       <Hero />
       <TheWorkspace />
+      <FAQ />
     </>
   );
 };

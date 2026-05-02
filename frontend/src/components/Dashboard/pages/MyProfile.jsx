@@ -14,19 +14,26 @@ const MyProfile = () => (
             <div style={{ fontWeight:600, fontSize:14, color:'var(--text)' }}>Ada Lovelace</div>
             <div style={{ fontSize:12, color:'var(--text-3)' }}>Owner · ChatFrame</div>
           </div>
-          <button className="db-btn db-btn--ghost" style={{ marginLeft:'auto' }}>Change Photo</button>
         </div>
         <div style={{ height:1, background:'var(--border)', margin:'18px 0' }} />
+        
+        {/* Editable fields */}
         {[
           { label:'Full Name',  val:'Ada Lovelace' },
           { label:'Email',      val:'ada@chatframe.io' },
-          { label:'Role',       val:'Owner' },
         ].map(f => (
           <div key={f.label} style={{ marginBottom:16 }}>
             <label style={{ display:'block', fontSize:12, color:'var(--text-2)', marginBottom:7 }}>{f.label}</label>
             <input className="db-input" defaultValue={f.val} />
           </div>
         ))}
+        
+        {/* Non-editable role field */}
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:'block', fontSize:12, color:'var(--text-2)', marginBottom:7 }}>Role</label>
+          <div className="myprofile__readonly-field">Owner</div>
+        </div>
+        
         <button className="db-btn db-btn--primary">Save Profile</button>
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>

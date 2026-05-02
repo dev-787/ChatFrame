@@ -89,7 +89,7 @@ const DashboardHome = () => {
             <span className="dash-home__card-title">Tickets per day</span>
             <span className="badge badge--ghost">This week</span>
           </div>
-          <ResponsiveContainer width="100%" height={120}>
+          <ResponsiveContainer width="100%" height={134}>
             <BarChart
               data={TICKET_DATA}
               margin={{ 

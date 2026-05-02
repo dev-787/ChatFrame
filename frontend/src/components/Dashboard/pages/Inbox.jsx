@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Paperclip, Send, Bot } from 'lucide-react';
 import './Inbox.scss';
 
@@ -8,6 +8,8 @@ const CONVOS = [
   { id:3, name:'Lena K.',    preview:'Refund still pending since Monday', time:'15m', priority:'normal', unread:0, status:'open' },
   { id:4, name:'James R.',   preview:'How do I upgrade my plan?',     time:'1h',  priority:'low',    unread:0, status:'open' },
   { id:5, name:'Mia C.',     preview:'Thanks, issue resolved!',       time:'2h',  priority:'normal', unread:0, status:'resolved' },
+  { id:6, name:'Omar H.',    preview:'Need help with setup',         time:'1d',  priority:'normal', unread:2, status:'open' },
+  { id:7, name:'Nina W.',    preview:'Great service, thank you!',     time:'2d',  priority:'normal', unread:0, status:'resolved' },
 ];
 
 const CHAT_DATA = {
@@ -103,15 +105,85 @@ const CHAT_DATA = {
       order: '#9876',
       plan: 'Premium'
     }
+  },
+  6: {
+    name: 'Omar H.',
+    meta: 'Setup Help · Technical',
+    messages: [
+      { from:'customer', text:'I need help setting up my account. The instructions are confusing.', time:'Yesterday' },
+    ],
+    suggestions: [
+      'I\'d be happy to walk you through the setup process step by step.',
+      'Let me send you our updated setup guide with screenshots.',
+    ],
+    customerInfo: {
+      name: 'Omar Hassan',
+      email: 'omar.h@email.com',
+      order: 'N/A',
+      plan: 'Basic'
+    }
+  },
+  7: {
+    name: 'Nina W.',
+    meta: 'Feedback · Resolved',
+    messages: [
+      { from:'customer', text:'Just wanted to say thank you for the excellent support!', time:'2 days ago' },
+      { from:'agent', text:'Thank you so much for the kind words, Nina! We really appreciate it.', time:'2 days ago' },
+    ],
+    suggestions: [
+      'Thank you for taking the time to share your feedback!',
+      'We\'re always here if you need any assistance in the future.',
+    ],
+    customerInfo: {
+      name: 'Nina Williams',
+      email: 'nina.w@email.com',
+      order: '#5432',
+      plan: 'Premium'
+    }
   }
 };
 
-const Inbox = () => {
-  const [active, setActive] = useState(1);
+const Inbox = ({ initialCustomerId }) => {
+  const [active, setActive] = useState(initialCustomerId || 1);
   const [input, setInput] = useState('');
+  const [chatData, setChatData] = useState(CHAT_DATA);
+
+  // Update active customer when initialCustomerId changes
+  useEffect(() => {
+    if (initialCustomerId) {
+      setActive(initialCustomerId);
+    }
+  }, [initialCustomerId]);
   
-  const currentChat = CHAT_DATA[active];
+  const currentChat = chatData[active];
   const currentConvo = CONVOS.find(c => c.id === active);
+
+  const handleSendMessage = () => {
+    if (!input.trim()) return;
+
+    const newMessage = {
+      from: 'agent',
+      text: input.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setChatData(prev => ({
+      ...prev,
+      [active]: {
+        ...prev[active],
+        messages: [...prev[active].messages, newMessage]
+      }
+    }));
+
+    setInput('');
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="inbox">
@@ -192,6 +264,7 @@ const Inbox = () => {
             placeholder="Type a reply…"
             value={input}
             onChange={e => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
             rows={2}
           />
           <div className="inbox__composer-actions">
@@ -199,7 +272,11 @@ const Inbox = () => {
               <Paperclip size={14} />
               Attach
             </button>
-            <button className="db-btn db-btn--primary">
+            <button 
+              className="db-btn db-btn--primary"
+              onClick={handleSendMessage}
+              disabled={!input.trim()}
+            >
               <Send size={14} />
               Send
             </button>
@@ -220,7 +297,11 @@ const Inbox = () => {
         <div className="inbox__copilot-section">
           <div className="inbox__copilot-label">Suggested Replies</div>
           {currentChat.suggestions.map((s, i) => (
-            <div key={i} className="inbox__suggestion" onClick={() => setInput(s)}>
+            <div 
+              key={i} 
+              className="inbox__suggestion" 
+              onClick={() => setInput(s)}
+            >
               {s}
             </div>
           ))}
