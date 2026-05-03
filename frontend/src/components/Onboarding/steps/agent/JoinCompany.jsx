@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { validateRequired, parseBackendErrors } from "../../../../utils/validation";
+import { validateJoinCompanyForm, parseBackendErrors } from "../../../../utils/validation";
 
 const ShieldIcon = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -26,14 +26,15 @@ const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish, o
 
   // Real-time validation
   useEffect(() => {
+    const validation = validateJoinCompanyForm(f);
     const newErrors = {};
     
-    if (touched.inviteCode) {
-      const validation = validateRequired(f.inviteCode, 'Invite code');
-      if (!validation.isValid) {
-        newErrors.inviteCode = validation.error;
+    // Only show errors for touched fields
+    Object.keys(validation.errors).forEach(key => {
+      if (touched[key]) {
+        newErrors[key] = validation.errors[key];
       }
-    }
+    });
     
     setErrors(newErrors);
   }, [f, touched]);
@@ -43,15 +44,10 @@ const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish, o
   };
 
   const validate = () => {
-    const errs = {};
-    const inviteCodeValidation = validateRequired(f.inviteCode, 'Invite code');
-    if (!inviteCodeValidation.isValid) {
-      errs.inviteCode = inviteCodeValidation.error;
-    }
-    
-    setErrors(errs);
+    const validation = validateJoinCompanyForm(f);
+    setErrors(validation.errors);
     setTouched({ inviteCode: true });
-    return Object.keys(errs).length === 0;
+    return validation.isValid;
   };
 
   const handleSubmit = async () => {

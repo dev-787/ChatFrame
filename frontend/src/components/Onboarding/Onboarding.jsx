@@ -44,9 +44,9 @@ const SUCCESS_CONTENT = {
   },
   agent: {
     title: "You're in the team",
-    subtitle: "You've joined your company's ChatFrame workspace. Head to your dashboard to start resolving customer queries.",
+    subtitle: "You've joined your company's ChatFrame workspace. Head to your workspace to start resolving customer queries.",
     cta: "Open Workspace",
-    ctaHref: "/dashboard",
+    ctaHref: "/workspace",
     items: [
       "Account created successfully",
       "Joined company workspace",
@@ -140,11 +140,7 @@ const Onboarding = () => {
       setFieldErrors({});
     } else if (error.validationErrors) {
       // Handle field-level validation errors from backend
-      const errors = {};
-      error.validationErrors.forEach(err => {
-        errors[err.field] = err.message;
-      });
-      setFieldErrors(errors);
+      setFieldErrors(error.validationErrors);
       setError(null);
     } else {
       setError(error.message || 'Something went wrong. Please try again.');
@@ -235,8 +231,8 @@ const Onboarding = () => {
     try {
       const payload = {
         sessionId,
-        industryType: data.industry,
-        countryRegion: data.country
+        industryType: data.industryType,
+        countryRegion: data.countryRegion
       };
 
       const response = await apiService.companyOnboardingStep3(payload);
@@ -258,8 +254,8 @@ const Onboarding = () => {
     try {
       const payload = {
         sessionId,
-        supportHoursOpen: data.openHour || '09:00',
-        supportHoursClose: data.closeHour || '17:00',
+        supportHoursOpen: data.supportHoursOpen || '09:00',
+        supportHoursClose: data.supportHoursClose || '17:00',
         outOfHoursMessage: data.outOfHoursMessage
       };
 
@@ -301,7 +297,8 @@ const Onboarding = () => {
         
         // Redirect after showing success screen
         setTimeout(() => {
-          if (response.data.user.role === 'support_agent') {
+          const userRole = response.data.user.role;
+          if (userRole === 'support_agent') {
             navigate('/workspace');
           } else {
             navigate('/dashboard');

@@ -1,5 +1,7 @@
 import './DashboardNav.scss';
-import { Menu, X, Search, Clock } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const PAGE_TITLES = {
   dashboard:    'Dashboard',
@@ -20,6 +22,20 @@ const PAGE_TITLES = {
 };
 
 const DashboardNav = ({ activePage, sidebarOpen, setSidebarOpen }) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force logout even if API call fails
+      navigate('/');
+    }
+  };
+
   return (
     <header className="db-nav">
       <div className="db-nav__left">
@@ -43,10 +59,9 @@ const DashboardNav = ({ activePage, sidebarOpen, setSidebarOpen }) => {
           <input placeholder="Search…" />
           <span className="db-nav__search-kbd">⌘K</span>
         </div>
-        <button className="db-nav__icon-btn">
-          <Clock size={15} />
-        </button>
-        <div className="db-nav__avatar">AL</div>
+        <span className="db-nav__logout" onClick={handleLogout}>
+          Logout
+        </span>
       </div>
     </header>
   );

@@ -1,4 +1,10 @@
+/**
+ * ChatFrame Authentication Context
+ * Manages auth state, user data, and authentication flow
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import apiService from '../services/api';
 
 const AuthContext = createContext();
 
@@ -12,43 +18,130 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
+  // Initialize auth state on app load
   useEffect(() => {
-    // Check for existing token on mount
-    const savedToken = localStorage.getItem('cf_token');
-    const savedUser = localStorage.getItem('cf_user');
-    
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    
-    setLoading(false);
+    initializeAuth();
   }, []);
 
-  const login = (userData, accessToken) => {
-    setUser(userData);
-    setToken(accessToken);
-    localStorage.setItem('cf_token', accessToken);
-    localStorage.setItem('cf_user', JSON.stringify(userData));
+  const initializeAuth = async () => {
+    try {
+      const token = apiService.getStoredToken();
+      
+      if (token) {
+        // Verify token is still valid by fetching user profile
+        const response = await apiService.getUserProfile();
+        if (response.success) {
+          setUser(response.data.user);
+        } else {
+          // Token is invalid, clear it
+          apiService.clearAuth();
+        }
+      }
+    } catch (error) {
+      // Token is invalid or network error, clear auth
+      apiService.clearAuth();
+      console.warn('Auth initialization failed:', error.message);
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('cf_token');
-    localStorage.removeItem('cf_user');
+  const login = (userData, token) => {
+    if (token) {
+      apiService.setToken(token);
+    }
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.warn('Logout failed:', error.message);
+    } finally {
+      apiService.clearAuth();
+      setUser(null);
+    }
+  };
+
+  const updateUser = (userData) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      ...userData
+    }));
+  };
+
+  const isAuthenticated = () => {
+    return !!user && !!apiService.getStoredToken();
+  };
+
+  const hasRole = (role) => {
+    return user?.role === role;
+  };
+
+  const isTenantAdmin = () => {
+    return hasRole('company_admin');
+  };
+
+  const isSupportAgent = () => {
+    return hasRole('support_agent');
+  };
+
+  const getTenantId = () => {
+    return user?.tenantId;
+  };
+
+  const getUserId = () => {
+    return user?.id || user?._id;
+  };
+
+  const getFullName = () => {
+    if (!user) return '';
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+  };
+
+  const getRoleBasedRoute = () => {
+    if (!user) return '/';
+    
+    switch (user.role) {
+      case 'company_admin':
+        return '/dashboard';
+      case 'support_agent':
+        return '/workspace';
+      default:
+        return '/dashboard';
+    }
+  };
+
+  const getDefaultRoute = () => {
+    return getRoleBasedRoute();
   };
 
   const value = {
+    // State
     user,
-    token,
     loading,
+    initialized,
+    
+    // Actions
     login,
     logout,
-    isAuthenticated: !!token,
+    updateUser,
+    
+    // Utilities
+    isAuthenticated,
+    hasRole,
+    isTenantAdmin,
+    isSupportAgent,
+    getTenantId,
+    getUserId,
+    getFullName,
+    getRoleBasedRoute,
+    getDefaultRoute,
   };
 
   return (

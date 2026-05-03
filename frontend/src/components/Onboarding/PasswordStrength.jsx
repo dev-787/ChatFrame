@@ -1,75 +1,83 @@
+/**
+ * Password Strength Indicator Component
+ * Shows real-time password validation feedback
+ */
+
 import React from 'react';
 import { validatePassword } from '../../utils/validation';
 
-const CheckIcon = ({ checked }) => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-    {checked ? (
-      <path 
-        d="M2 6l2.5 2.5L10 3" 
-        stroke="currentColor" 
-        strokeWidth="1.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      />
-    ) : (
-      <circle 
-        cx="6" 
-        cy="6" 
-        r="2" 
-        fill="currentColor" 
-        opacity="0.3"
-      />
-    )}
-  </svg>
-);
+const PasswordStrength = ({ password }) => {
+  if (!password) return null;
 
-const PasswordStrength = ({ password, className = '' }) => {
-  const validation = validatePassword(password || '');
-  const { checks } = validation;
-  
+  const validation = validatePassword(password);
   const requirements = [
-    { key: 'minLength', label: 'Minimum 8 characters', checked: checks.minLength },
-    { key: 'hasUppercase', label: 'One uppercase letter', checked: checks.hasUppercase },
-    { key: 'hasLowercase', label: 'One lowercase letter', checked: checks.hasLowercase },
-    { key: 'hasNumber', label: 'One number', checked: checks.hasNumber },
+    { label: 'At least 8 characters', met: password.length >= 8 },
+    { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'One number', met: /\d/.test(password) }
   ];
 
-  const checkedCount = requirements.filter(req => req.checked).length;
-  const strengthLevel = checkedCount === 0 ? 'none' : 
-                       checkedCount <= 2 ? 'weak' : 
-                       checkedCount === 3 ? 'medium' : 'strong';
+  // Calculate strength score
+  let score = 0;
+  if (password.length >= 8) score += 30;
+  if (/[A-Z]/.test(password)) score += 30;
+  if (/[a-z]/.test(password)) score += 20;
+  if (/\d/.test(password)) score += 20;
+
+  let strengthLabel = 'Weak';
+  let strengthColor = '#ef4444';
+  
+  if (score >= 80) {
+    strengthLabel = 'Strong';
+    strengthColor = '#10b981';
+  } else if (score >= 50) {
+    strengthLabel = 'Fair';
+    strengthColor = '#f59e0b';
+  }
 
   return (
-    <div className={`password-strength ${className}`}>
-      <div className="password-strength__requirements">
-        {requirements.map((req) => (
+    <div className="password-strength">
+      {/* Strength meter */}
+      <div className="password-strength__meter">
+        <div className="password-strength__label">
+          Password strength: <span style={{ color: strengthColor }}>{strengthLabel}</span>
+        </div>
+        <div className="password-strength__meter-track">
           <div 
-            key={req.key} 
-            className={`password-strength__requirement ${req.checked ? 'password-strength__requirement--checked' : ''}`}
+            className="password-strength__meter-fill"
+            style={{ 
+              width: `${Math.min(score, 100)}%`,
+              backgroundColor: strengthColor 
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Requirements checklist */}
+      <div className="password-strength__requirements">
+        {requirements.map((req, index) => (
+          <div 
+            key={index}
+            className={`password-strength__requirement ${req.met ? 'password-strength__requirement--checked' : ''}`}
           >
             <div className="password-strength__check">
-              <CheckIcon checked={req.checked} />
+              {req.met ? (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path 
+                    d="M2 5l2 2 4-4" 
+                    stroke="currentColor" 
+                    strokeWidth="1.2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <div className="password-strength__dot" />
+              )}
             </div>
             <span className="password-strength__label">{req.label}</span>
           </div>
         ))}
       </div>
-      
-      {password && (
-        <div className="password-strength__meter">
-          <div className="password-strength__meter-track">
-            <div 
-              className={`password-strength__meter-fill password-strength__meter-fill--${strengthLevel}`}
-              style={{ width: `${(checkedCount / requirements.length) * 100}%` }}
-            />
-          </div>
-          <span className={`password-strength__level password-strength__level--${strengthLevel}`}>
-            {strengthLevel === 'none' ? '' :
-             strengthLevel === 'weak' ? 'Weak' :
-             strengthLevel === 'medium' ? 'Good' : 'Strong'}
-          </span>
-        </div>
-      )}
     </div>
   );
 };

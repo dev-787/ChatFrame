@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { validateSupportConfigForm, parseBackendErrors } from "../../../../utils/validation";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => {
   const h = i % 12 || 12;
@@ -13,18 +14,52 @@ const ChevronIcon = () => (
 );
 
 const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish, onSubmit, loading, fieldErrors }) => {
+  const [errors, setErrors] = useState({});
   const f = formData;
-  const set = (key) => (e) => updateForm({ [key]: e.target.value });
+  
+  const set = (key) => (e) => {
+    updateForm({ [key]: e.target.value });
+    
+    // Clear errors when user changes values
+    if (errors[key] || fieldErrors[key]) {
+      setErrors(prev => ({ ...prev, [key]: null }));
+    }
+  };
+
+  const validate = () => {
+    // Ensure we have the current values including defaults
+    const currentData = {
+      supportHoursOpen: f.supportHoursOpen || '09:00',
+      supportHoursClose: f.supportHoursClose || '17:00',
+      outOfHoursMessage: f.outOfHoursMessage
+    };
+    
+    const validation = validateSupportConfigForm(currentData);
+    setErrors(validation.errors);
+    return validation.isValid;
+  };
 
   const handleSubmit = async () => {
+    // Ensure we pass the current values including defaults
+    const currentData = {
+      supportHoursOpen: f.supportHoursOpen || '09:00',
+      supportHoursClose: f.supportHoursClose || '17:00',
+      outOfHoursMessage: f.outOfHoursMessage
+    };
+    
+    if (!validate()) return;
+    
     if (onSubmit) {
-      await onSubmit(f);
+      await onSubmit(currentData);
     } else if (isLast) {
       onFinish();
     } else {
       onNext();
     }
   };
+
+  // Merge local validation errors with API field errors
+  const allErrors = { ...errors, ...parseBackendErrors(fieldErrors) };
 
   return (
     <div className="support-config">
@@ -35,7 +70,7 @@ const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish,
           <div className="ob-field ob-field--select ob-field--inline">
             <span className="hours-label">Opens at</span>
             <div className="ob-select-wrap">
-              <select value={f.openHour || "09:00"} onChange={set("openHour")}>
+              <select value={f.supportHoursOpen || "09:00"} onChange={set("supportHoursOpen")}>
                 {HOURS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
               </select>
               <ChevronIcon />
@@ -44,13 +79,18 @@ const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish,
           <div className="ob-field ob-field--select ob-field--inline">
             <span className="hours-label">Closes at</span>
             <div className="ob-select-wrap">
-              <select value={f.closeHour || "17:00"} onChange={set("closeHour")}>
+              <select value={f.supportHoursClose || "17:00"} onChange={set("supportHoursClose")}>
                 {HOURS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
               </select>
               <ChevronIcon />
             </div>
           </div>
         </div>
+        {(allErrors.supportHoursOpen || allErrors.supportHoursClose) && (
+          <span className="ob-field__error">
+            {allErrors.supportHoursOpen || allErrors.supportHoursClose}
+          </span>
+        )}
       </div>
 
       {/* Out-of-hours message */}
@@ -65,6 +105,7 @@ const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish,
           onChange={set("outOfHoursMessage")}
           rows={3}
         />
+        {allErrors.outOfHoursMessage && <span className="ob-field__error">{allErrors.outOfHoursMessage}</span>}
       </div>
 
       <div className="ob-actions">

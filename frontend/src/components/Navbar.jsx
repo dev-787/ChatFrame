@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "./Navbar.scss";
 
 const ChatFrameLogo = () => (
@@ -15,6 +16,62 @@ const ChatFrameLogo = () => (
 );
 
 const Navbar = () => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  // Don't render auth buttons while loading
+  const renderAuthActions = () => {
+    if (loading) {
+      return null;
+    }
+
+    if (isAuthenticated()) {
+      // Show role-based navigation for authenticated users
+      const userRole = user?.role;
+      
+      if (userRole === 'company_admin') {
+        return (
+          <div className="navbar__actions">
+            <Link to="/dashboard" className="navbar__btn navbar__btn--dashboard">
+              <span className="navbar__btn-inner">
+                <span className="navbar__btn-top">Dashboard</span>
+                <span className="navbar__btn-bottom">Dashboard</span>
+              </span>
+            </Link>
+          </div>
+        );
+      } else if (userRole === 'support_agent') {
+        return (
+          <div className="navbar__actions">
+            <Link to="/workspace" className="navbar__btn navbar__btn--workspace">
+              <span className="navbar__btn-inner">
+                <span className="navbar__btn-top">Workspace</span>
+                <span className="navbar__btn-bottom">Workspace</span>
+              </span>
+            </Link>
+          </div>
+        );
+      }
+    }
+
+    // Show login/signup for non-authenticated users
+    return (
+      <div className="navbar__actions">
+        <Link to="/login" className="navbar__btn navbar__btn--login">
+          <span className="navbar__btn-inner">
+            <span className="navbar__btn-top">Login</span>
+            <span className="navbar__btn-bottom">Login</span>
+          </span>
+        </Link>
+        <Link to="/onboarding" className="navbar__btn navbar__btn--signup">
+          <span className="navbar__btn-inner">
+            <span className="navbar__btn-top">Sign Up</span>
+            <span className="navbar__btn-bottom">Sign Up</span>
+          </span>
+        </Link>
+      </div>
+    );
+  };
+
   return (
     <nav className="navbar">
       {/* Logo */}
@@ -33,21 +90,8 @@ const Navbar = () => {
         <li><a href="#">Docs</a></li>
       </ul>
 
-      {/* Actions */}
-      <div className="navbar__actions">
-        <Link to="/login" className="navbar__btn navbar__btn--login">
-          <span className="navbar__btn-inner">
-            <span className="navbar__btn-top">Login</span>
-            <span className="navbar__btn-bottom">Login</span>
-          </span>
-        </Link>
-        <Link to="/onboarding" className="navbar__btn navbar__btn--signup">
-          <span className="navbar__btn-inner">
-            <span className="navbar__btn-top">Sign Up</span>
-            <span className="navbar__btn-bottom">Sign Up</span>
-          </span>
-        </Link>
-      </div>
+      {/* Auth-aware Actions */}
+      {renderAuthActions()}
     </nav>
   );
 };

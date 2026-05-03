@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { validateRequired, parseBackendErrors } from "../../../../utils/validation";
+import { validateCompanyIdentityForm, parseBackendErrors } from "../../../../utils/validation";
 
 const UploadIcon = () => (
   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -27,14 +27,15 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loadi
 
   // Real-time validation
   useEffect(() => {
+    const validation = validateCompanyIdentityForm(f);
     const newErrors = {};
     
-    if (touched.companyName) {
-      const validation = validateRequired(f.companyName, 'Company name');
-      if (!validation.isValid) {
-        newErrors.companyName = validation.error;
+    // Only show errors for touched fields
+    Object.keys(validation.errors).forEach(key => {
+      if (touched[key]) {
+        newErrors[key] = validation.errors[key];
       }
-    }
+    });
     
     setErrors(newErrors);
   }, [f, touched]);
@@ -53,15 +54,10 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loadi
   };
 
   const validate = () => {
-    const errs = {};
-    const companyNameValidation = validateRequired(f.companyName, 'Company name');
-    if (!companyNameValidation.isValid) {
-      errs.companyName = companyNameValidation.error;
-    }
-    
-    setErrors(errs);
-    setTouched({ companyName: true });
-    return Object.keys(errs).length === 0;
+    const validation = validateCompanyIdentityForm(f);
+    setErrors(validation.errors);
+    setTouched({ companyName: true, companyWebsite: true });
+    return validation.isValid;
   };
 
   const handleContinue = async () => {

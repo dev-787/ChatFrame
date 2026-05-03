@@ -6,7 +6,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Onboarding from './components/Onboarding/Onboarding';
 import Dashboard from './components/Dashboard/Dashboard';
+import Workspace from './components/Workspace/Workspace';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 const App = () => {
@@ -16,10 +18,51 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Public routes - redirect to role-based route if already authenticated */}
+          <Route 
+            path="/login" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <Login />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/signup" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <Signup />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/onboarding" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <Onboarding />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Protected routes with role-based access */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute requireAuth={true} allowedRoles={['company_admin']}>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/workspace" 
+            element={
+              <ProtectedRoute requireAuth={true} allowedRoles={['support_agent']}>
+                <Workspace />
+              </ProtectedRoute>
+            } 
+          />
 
         </Routes>
       </BrowserRouter>

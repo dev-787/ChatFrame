@@ -159,4 +159,27 @@
       }
     }
   }
+
+  // ── Dashboard & Workspace Buttons ──
+  &__btn {
+    &--dashboard,
+    &--workspace {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(250, 250, 250, 0.9);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #fafafa;
+      }
+
+      .navbar__btn-inner {
+        .navbar__btn-top,
+        .navbar__btn-bottom {
+          color: inherit;
+        }
+      }
+    }
+  }
 }
