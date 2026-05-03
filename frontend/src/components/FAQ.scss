@@ -41,10 +41,11 @@
   // ── Header ──
   &__header {
     margin-bottom: clamp(40px, 6vw, 72px);
+    text-align: center;
   }
 
   &__title {
-    font-family: 'Fraunces', Georgia, serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: clamp(28px, 4vw, 44px);
     font-weight: 600;
     font-style: normal;
@@ -52,6 +53,13 @@
     color: #fafafa;
     margin-bottom: 12px;
     line-height: 1.1;
+  }
+
+  &__title-em {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    font-style: italic;
+    opacity: 0.82;
   }
 
   &__sub {

@@ -41,6 +41,14 @@ const HowItWorks = () => (
     <div className="hiw__label-top">
       <span>How it works</span>
     </div>
+    
+    <h2 className="hiw__heading">
+      Simple setup, <em className="hiw__heading-em">powerful results</em>
+    </h2>
+    <p className="hiw__subheading">
+      Get ChatFrame running in minutes, not hours
+    </p>
+    
     <div className="hiw__cards">
       {STEPS.map((step) => (
         <div
@@ -58,9 +66,9 @@ const HowItWorks = () => (
           <div className="hiw__content">
             <span className="hiw__num">{step.num}</span>
             <span className="hiw__small-label">{step.label}</span>
-            <h3 className="hiw__heading">
+            <h3 className="hiw__card-heading">
               {step.headingStatic}{' '}
-              <em className="hiw__heading-em">{step.headingItalic}</em>
+              <em className="hiw__card-heading-em">{step.headingItalic}</em>
             </h3>
             <p className="hiw__desc">{step.desc}</p>
           </div>

@@ -36,6 +36,32 @@ $side   : clamp(80px, 12vw, 220px);
     }
   }
 
+  &__heading {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: clamp(32px, 4.5vw, 58px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    color: $text;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  &__heading-em {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    font-style: italic;
+    opacity: 0.82;
+  }
+
+  &__subheading {
+    font-size: 15px;
+    color: $muted;
+    text-align: center;
+    margin-bottom: 52px;
+    line-height: 1.6;
+  }
+
   &__cards {
     display: flex;
     flex-direction: column;
@@ -147,7 +173,7 @@ $side   : clamp(80px, 12vw, 220px);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.35);
   font-variant-numeric: tabular-nums;
 }
 
@@ -173,8 +199,8 @@ $side   : clamp(80px, 12vw, 220px);
   }
 }
 
-// ── Heading ────────────────────────────────────────────
-.hiw__heading {
+// ── Card Heading ───────────────────────────────────────
+.hiw__card-heading {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: clamp(24px, 3vw, 40px);
   font-weight: 700;
@@ -184,7 +210,7 @@ $side   : clamp(80px, 12vw, 220px);
   margin-bottom: 16px;
 }
 
-.hiw__heading-em {
+.hiw__card-heading-em {
   font-family: 'Fraunces', Georgia, serif;
   font-weight: 300;
   font-style: italic;

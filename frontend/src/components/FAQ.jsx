@@ -59,9 +59,11 @@ const FAQ = () => {
       <div className="faq__inner">
 
         <div className="faq__header">
-          <h2 className="faq__title">Frequently asked questions</h2>
+          <h2 className="faq__title">
+            Frequently asked <em className="faq__title-em">questions</em>
+          </h2>
           <p className="faq__sub">
-            Everything you need to know about ChatFrame.
+            Everything you need to know about ChatFrame.<br />
             Can't find an answer? <a href="/contact">Talk to our team.</a>
           </p>
         </div>
