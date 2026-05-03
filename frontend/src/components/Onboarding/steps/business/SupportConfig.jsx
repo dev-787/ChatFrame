@@ -12,13 +12,18 @@ const ChevronIcon = () => (
   </svg>
 );
 
-const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish }) => {
+const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish, onSubmit, loading, fieldErrors }) => {
   const f = formData;
   const set = (key) => (e) => updateForm({ [key]: e.target.value });
 
-  const handleSubmit = () => {
-    if (isLast) onFinish();
-    else onNext();
+  const handleSubmit = async () => {
+    if (onSubmit) {
+      await onSubmit(f);
+    } else if (isLast) {
+      onFinish();
+    } else {
+      onNext();
+    }
   };
 
   return (
@@ -70,8 +75,8 @@ const SupportConfig = ({ formData, updateForm, onNext, onBack, isLast, onFinish 
           </span>
           Back
         </button>
-        <button className="ob-btn ob-btn--primary" type="button" onClick={handleSubmit}>
-          {isLast ? "Launch ChatFrame" : "Continue"}
+        <button className="ob-btn ob-btn--primary" type="button" onClick={handleSubmit} disabled={loading}>
+          {loading ? "Setting up workspace..." : (isLast ? "Launch ChatFrame" : "Continue")}
           <span className="ob-arrow">
             <span className="ob-arrow__default"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             <span className="ob-arrow__hover"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>

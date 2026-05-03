@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { validateRequired, parseBackendErrors } from "../../../../utils/validation";
 
 const UploadIcon = () => (
   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -7,13 +8,36 @@ const UploadIcon = () => (
   </svg>
 );
 
-const CompanyIdentity = ({ formData, updateForm, onNext, onBack }) => {
+const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loading, fieldErrors }) => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const fileRef = useRef();
 
   const f = formData;
-  const set = (key) => (e) => updateForm({ [key]: e.target.value });
+  const set = (key) => (e) => {
+    updateForm({ [key]: e.target.value });
+    setTouched(prev => ({ ...prev, [key]: true }));
+    
+    // Clear errors for this field when user starts typing
+    if (errors[key] || fieldErrors[key]) {
+      setErrors(prev => ({ ...prev, [key]: null }));
+    }
+  };
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors = {};
+    
+    if (touched.companyName) {
+      const validation = validateRequired(f.companyName, 'Company name');
+      if (!validation.isValid) {
+        newErrors.companyName = validation.error;
+      }
+    }
+    
+    setErrors(newErrors);
+  }, [f, touched]);
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -24,11 +48,39 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack }) => {
     reader.readAsDataURL(file);
   };
 
+  const handleBlur = (fieldName) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }));
+  };
+
   const validate = () => {
     const errs = {};
-    if (!f.companyName?.trim()) errs.companyName = "Company name is required";
+    const companyNameValidation = validateRequired(f.companyName, 'Company name');
+    if (!companyNameValidation.isValid) {
+      errs.companyName = companyNameValidation.error;
+    }
+    
     setErrors(errs);
+    setTouched({ companyName: true });
     return Object.keys(errs).length === 0;
+  };
+
+  const handleContinue = async () => {
+    if (validate()) {
+      if (onSubmit) {
+        await onSubmit(f);
+      } else {
+        onNext();
+      }
+    }
+  };
+
+  // Merge local validation errors with API field errors
+  const allErrors = { ...errors, ...parseBackendErrors(fieldErrors) };
+  
+  const getFieldState = (fieldName) => {
+    if (allErrors[fieldName]) return 'error';
+    if (touched[fieldName] && f[fieldName]) return 'success';
+    return 'default';
   };
 
   return (
@@ -53,15 +105,16 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack }) => {
         />
       </div>
 
-      <div className={`ob-field ${errors.companyName ? "ob-field--error" : ""}`}>
+      <div className={`ob-field ob-field--${getFieldState('companyName')}`}>
         <label>Company name</label>
         <input
           type="text"
           placeholder="Acme Corp"
           value={f.companyName || ""}
           onChange={set("companyName")}
+          onBlur={() => handleBlur('companyName')}
         />
-        {errors.companyName && <span className="ob-field__error">{errors.companyName}</span>}
+        {allErrors.companyName && <span className="ob-field__error">{allErrors.companyName}</span>}
       </div>
 
       <div className="ob-field">
@@ -85,8 +138,8 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack }) => {
           </span>
           Back
         </button>
-        <button className="ob-btn ob-btn--primary" type="button" onClick={() => { if (validate()) onNext(); }}>
-          Continue
+        <button className="ob-btn ob-btn--primary" type="button" onClick={handleContinue} disabled={loading}>
+          {loading ? "Saving..." : "Continue"}
           <span className="ob-arrow">
             <span className="ob-arrow__default"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             <span className="ob-arrow__hover"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>

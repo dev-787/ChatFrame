@@ -189,6 +189,120 @@ $green:          rgba(160, 255, 180, 0.85);
       }
     }
   }
+
+  // ── Error message ──
+  &__error {
+    background: rgba(255, 100, 100, 0.08);
+    border: 1px solid rgba(255, 100, 100, 0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: $error;
+    text-align: center;
+  }
+}
+
+// ──────────────────────────────────────────────────────
+// PASSWORD STRENGTH INDICATOR
+// ──────────────────────────────────────────────────────
+
+.password-strength {
+  margin-top: 12px;
+  
+  &__requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  &__requirement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: $text-dim;
+    transition: color 0.2s ease;
+    
+    &--checked {
+      color: $green;
+    }
+  }
+  
+  &__check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+    
+    .password-strength__requirement--checked & {
+      background: rgba(160, 255, 180, 0.15);
+      border-color: rgba(160, 255, 180, 0.3);
+      color: $green;
+    }
+  }
+  
+  &__label {
+    line-height: 1.4;
+  }
+  
+  &__meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  &__meter-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  &__meter-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    
+    &--weak {
+      background: rgba(255, 100, 100, 0.8);
+    }
+    
+    &--medium {
+      background: rgba(255, 200, 100, 0.8);
+    }
+    
+    &--strong {
+      background: $green;
+    }
+  }
+  
+  &__level {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    min-width: 40px;
+    text-align: right;
+    
+    &--weak {
+      color: rgba(255, 100, 100, 0.8);
+    }
+    
+    &--medium {
+      color: rgba(255, 200, 100, 0.8);
+    }
+    
+    &--strong {
+      color: $green;
+    }
+  }
 }
 
 // ──────────────────────────────────────────────────────
@@ -273,16 +387,49 @@ $green:          rgba(160, 255, 180, 0.85);
     letter-spacing: 0.04em;
   }
 
+  &__helper {
+    font-size: 11px;
+    color: rgba(250,250,250,0.35);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
   &__error {
     font-size: 11.5px;
     color: $error;
     letter-spacing: 0.01em;
+    margin-top: 6px;
+    opacity: 0;
+    transform: translateY(-4px);
+    animation: errorSlideIn 0.2s ease-out forwards;
+    line-height: 1.4;
+  }
+
+  @keyframes errorSlideIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   &--error {
     input, textarea, .ob-select-wrap {
       border-color: rgba(255,100,100,0.45) !important;
       box-shadow: 0 0 0 3px rgba(255,100,100,0.06) !important;
+      animation: fieldErrorShake 0.4s ease-out;
+    }
+  }
+
+  @keyframes fieldErrorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+  }
+
+  &--success {
+    input, textarea, .ob-select-wrap {
+      border-color: rgba(160, 255, 180, 0.4) !important;
+      box-shadow: 0 0 0 3px rgba(160, 255, 180, 0.06) !important;
     }
   }
 

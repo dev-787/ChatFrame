@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Onboarding.scss";
 import Logo from "../Logo/Logo";
 import RoleSelect from "./steps/RoleSelect";
@@ -7,6 +8,8 @@ import CompanyIdentity from "./steps/business/CompanyIdentity";
 import CompanyDetails from "./steps/business/CompanyDetails";
 import SupportConfig from "./steps/business/SupportConfig";
 import JoinCompany from "./steps/agent/JoinCompany";
+import apiService from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 const FLOW_MAP = {
   business: [
@@ -111,6 +114,13 @@ const Onboarding = () => {
   const [formData, setFormData] = useState({});
   const [direction, setDirection] = useState("forward");
   const [done, setDone] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const flow = role ? FLOW_MAP[role] : DEFAULT_FLOW;
   const totalSteps = role ? flow.length : 1;
@@ -118,6 +128,192 @@ const Onboarding = () => {
   const StepComponent = currentStep.component;
 
   const updateForm = (data) => setFormData((prev) => ({ ...prev, ...data }));
+
+  const clearErrors = () => {
+    setError(null);
+    setFieldErrors({});
+  };
+
+  const handleApiError = (error) => {
+    if (error.message === 'Too many attempts, please wait') {
+      setError(error.message);
+      setFieldErrors({});
+    } else if (error.validationErrors) {
+      // Handle field-level validation errors from backend
+      const errors = {};
+      error.validationErrors.forEach(err => {
+        errors[err.field] = err.message;
+      });
+      setFieldErrors(errors);
+      setError(null);
+    } else {
+      setError(error.message || 'Something went wrong. Please try again.');
+      setFieldErrors({});
+    }
+  };
+
+  const handleAccountDetailsSubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword
+      };
+
+      const response = await apiService.companyOnboardingStep1(payload);
+      
+      if (response.success) {
+        setSessionId(response.data.sessionId);
+        goNext();
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAgentAccountSubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword
+      };
+
+      const response = await apiService.agentOnboardingStep1(payload);
+      
+      if (response.success) {
+        setSessionId(response.data.sessionId);
+        goNext();
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompanyIdentitySubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        sessionId,
+        companyName: data.companyName,
+        companyWebsite: data.companyWebsite,
+        companyLogo: data.companyLogo
+      };
+
+      const response = await apiService.companyOnboardingStep2(payload);
+      
+      if (response.success) {
+        goNext();
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompanyDetailsSubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        sessionId,
+        industryType: data.industry,
+        countryRegion: data.country
+      };
+
+      const response = await apiService.companyOnboardingStep3(payload);
+      
+      if (response.success) {
+        goNext();
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSupportConfigSubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        sessionId,
+        supportHoursOpen: data.openHour || '09:00',
+        supportHoursClose: data.closeHour || '17:00',
+        outOfHoursMessage: data.outOfHoursMessage
+      };
+
+      const response = await apiService.companyOnboardingStep4(payload);
+      
+      if (response.success) {
+        // Save auth data and redirect
+        login(response.data.user, response.data.tokens.accessToken);
+        setDone(true);
+        
+        // Redirect after showing success screen
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoinCompanySubmit = async (data) => {
+    setLoading(true);
+    clearErrors();
+    
+    try {
+      const payload = {
+        sessionId,
+        inviteCode: data.inviteCode
+      };
+
+      const response = await apiService.agentOnboardingStep2(payload);
+      
+      if (response.success) {
+        // Save auth data and redirect
+        login(response.data.user, response.data.tokens.accessToken);
+        setDone(true);
+        
+        // Redirect after showing success screen
+        setTimeout(() => {
+          if (response.data.user.role === 'support_agent') {
+            navigate('/workspace');
+          } else {
+            navigate('/dashboard');
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const goNext = () => {
     setDirection("forward");
@@ -144,6 +340,29 @@ const Onboarding = () => {
   const handleFinish = () => {
     console.log("Onboarding complete:", formData);
     setDone(true);
+  };
+
+  const handleStepSubmit = async (data) => {
+    clearErrors();
+    
+    // Determine which API call to make based on current step and role
+    if (stepIndex === 1) { // Account Details step
+      if (role === 'business') {
+        await handleAccountDetailsSubmit(data);
+      } else if (role === 'agent') {
+        await handleAgentAccountSubmit(data);
+      }
+    } else if (role === 'business') {
+      if (stepIndex === 2) { // Company Identity
+        await handleCompanyIdentitySubmit(data);
+      } else if (stepIndex === 3) { // Company Details
+        await handleCompanyDetailsSubmit(data);
+      } else if (stepIndex === 4) { // Support Config
+        await handleSupportConfigSubmit(data);
+      }
+    } else if (role === 'agent' && stepIndex === 2) { // Join Company
+      await handleJoinCompanySubmit(data);
+    }
   };
 
   const isLast = stepIndex === flow.length - 1;
@@ -189,15 +408,23 @@ const Onboarding = () => {
 
             {/* Step content */}
             <div className={`onboarding__step onboarding__step--${direction}`} key={stepIndex}>
+              {error && (
+                <div className="onboarding__error">
+                  {error}
+                </div>
+              )}
               <StepComponent
                 formData={formData}
                 updateForm={updateForm}
                 onNext={stepIndex === 0 ? handleRoleSelect : goNext}
                 onBack={goBack}
                 onFinish={handleFinish}
+                onSubmit={handleStepSubmit}
                 isLast={isLast}
                 showBack={stepIndex > 0}
                 role={role}
+                loading={loading}
+                fieldErrors={fieldErrors}
               />
             </div>
           </>
