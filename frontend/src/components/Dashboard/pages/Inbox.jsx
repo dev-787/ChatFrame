@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, Paperclip, Send, Bot } from 'lucide-react';
+import { Search, Paperclip, Send, Bot, UserCheck } from 'lucide-react';
 import './Inbox.scss';
 import apiService from '../../../services/api';
 import socketService from '../../../services/socket';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const Inbox = ({ initialCustomerId }) => {
+  const { user, getFullName } = useAuth();
   const [active, setActive] = useState(initialCustomerId || null);
   const [input, setInput] = useState('');
   const [chatData, setChatData] = useState({});
@@ -12,6 +14,7 @@ const Inbox = ({ initialCustomerId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [assigningTicket, setAssigningTicket] = useState(false);
 
   // Load conversations from API
   useEffect(() => {
@@ -74,11 +77,29 @@ const Inbox = ({ initialCustomerId }) => {
       const response = await apiService.getInboxConversations();
       
       if (response.success && response.data && Array.isArray(response.data.conversations)) {
-        setConversations(response.data.conversations);
+        // Transform API response to match frontend expectations
+        const transformedConversations = response.data.conversations.map(convo => ({
+          ...convo,
+          customer: {
+            name: convo.customerName || 'Unknown Customer'
+          },
+          lastActivity: convo.lastMessage ? 
+            new Date(convo.lastMessage.createdAt).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }) : 'N/A',
+          preview: convo.lastMessage ? 
+            convo.lastMessage.content.substring(0, 50) + (convo.lastMessage.content.length > 50 ? '...' : '') : 
+            'No messages',
+          unreadCount: 0 // You can implement this later based on your needs
+        }));
+
+        console.log('Transformed conversations:', transformedConversations);
+        setConversations(transformedConversations);
         
         // Set first conversation as active if no active conversation and we have data
-        if (!active && response.data.conversations.length > 0) {
-          setActive(response.data.conversations[0]._id);
+        if (!active && transformedConversations.length > 0) {
+          setActive(transformedConversations[0]._id);
         }
       } else {
         console.warn('Invalid conversations response:', response);
@@ -103,9 +124,41 @@ const Inbox = ({ initialCustomerId }) => {
       const response = await apiService.getInboxTicket(ticketId);
       
       if (response.success && response.data) {
+        // Transform API response to match frontend expectations
+        const transformedData = {
+          ...response.data.ticket,
+          name: response.data.ticket.customerName || 'Unknown Customer',
+          meta: `Ticket #${response.data.ticket.ticketNumber} • ${response.data.ticket.status}`,
+          assignedTo: response.data.ticket.assignedTo || null,
+          messages: (response.data.messages || []).map(msg => ({
+            from: msg.senderType === 'customer' ? 'customer' : 
+                  msg.senderType === 'ai' ? 'ai' : 'agent',
+            text: msg.content,
+            time: new Date(msg.createdAt).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            id: msg._id,
+            isAiGenerated: msg.isAiGenerated || false,
+            aiConfidence: msg.aiConfidence || null
+          })),
+          suggestions: [
+            "Thanks for reaching out! I'll help you with that.",
+            "Let me look into this for you right away.",
+            "I understand your concern. Here's what we can do...",
+            "Is there anything else I can help you with today?"
+          ],
+          customerInfo: {
+            name: response.data.ticket.customerName || 'N/A',
+            email: response.data.ticket.customerEmail || 'N/A',
+            order: 'N/A',
+            plan: 'Standard'
+          }
+        };
+
         setChatData(prev => ({
           ...prev,
-          [ticketId]: response.data
+          [ticketId]: transformedData
         }));
       }
     } catch (error) {
@@ -139,11 +192,11 @@ const Inbox = ({ initialCustomerId }) => {
 
     try {
       const response = await apiService.sendMessage(active, {
-        text: messageText,
-        type: 'agent_reply'
+        content: messageText,
+        senderType: 'agent'
       });
 
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.message) {
         // Replace temp message with real message from server
         setChatData(prev => ({
           ...prev,
@@ -151,10 +204,11 @@ const Inbox = ({ initialCustomerId }) => {
             ...prev[active],
             messages: prev[active].messages.map(msg => 
               msg.sending ? {
-                ...msg,
-                sending: false,
-                id: response.data._id,
-                time: new Date(response.data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                from: 'agent',
+                text: response.data.message.content,
+                time: new Date(response.data.message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                id: response.data.message._id,
+                sending: false
               } : msg
             )
           }
@@ -187,7 +241,37 @@ const Inbox = ({ initialCustomerId }) => {
     }
   };
 
-  
+  const handleAssignToMe = async () => {
+    if (!isValidObjectId(active) || assigningTicket) return;
+    try {
+      setAssigningTicket(true);
+      const res = await apiService.updateTicket(active, {
+        assignedTo: user?.id || user?._id,
+        status: 'in_progress',
+      });
+      if (res.success) {
+        const agentName = getFullName() || 'You';
+        // Update chatData with new assigned agent and status
+        setChatData(prev => ({
+          ...prev,
+          [active]: {
+            ...prev[active],
+            assignedTo: { firstName: user?.firstName, lastName: user?.lastName },
+            meta: `Ticket #${prev[active]?.ticketNumber} • in_progress`,
+          }
+        }));
+        // Update conversation list status
+        setConversations(prev =>
+          prev.map(c => c._id === active ? { ...c, status: 'in_progress' } : c)
+        );
+      }
+    } catch (e) {
+      console.error('Failed to assign ticket:', e);
+    } finally {
+      setAssigningTicket(false);
+    }
+  };
+
   const currentChat = chatData[active];
   const currentConvo = conversations.find(c => c._id === active);
 
@@ -253,20 +337,28 @@ const Inbox = ({ initialCustomerId }) => {
             className={`inbox__convo ${active === c._id ? 'inbox__convo--active' : ''}`}
             onClick={() => setActive(c._id)}
           >
-            <div className="inbox__convo-avatar">{c.customer?.name?.[0] || c.customerName?.[0] || '?'}</div>
+            <div className="inbox__convo-avatar">
+              {String(c.customer?.name || c.customerName || '?')[0]}
+            </div>
             <div className="inbox__convo-body">
               <div className="inbox__convo-row">
-                <span className="inbox__convo-name">{c.customer?.name || c.customerName || 'Unknown'}</span>
-                <span className="inbox__convo-time">{c.lastActivity || c.time || 'N/A'}</span>
+                <span className="inbox__convo-name">
+                  {String(c.customer?.name || c.customerName || 'Unknown')}
+                </span>
+                <span className="inbox__convo-time">
+                  {String(c.lastActivity || 'N/A')}
+                </span>
               </div>
               <div className="inbox__convo-row">
-                <span className="inbox__convo-preview">{c.lastMessage || c.preview || 'No messages'}</span>
+                <span className="inbox__convo-preview">
+                  {String(c.preview || 'No messages')}
+                </span>
                 {c.unreadCount > 0 && (
                   <span className="inbox__convo-unread">{c.unreadCount}</span>
                 )}
               </div>
               <span className={`badge badge--${c.priority === 'urgent' ? 'red' : c.priority === 'high' ? 'yellow' : 'ghost'}`}>
-                {c.priority || 'normal'}
+                {String(c.priority || 'normal')}
               </span>
             </div>
           </div>
@@ -276,17 +368,23 @@ const Inbox = ({ initialCustomerId }) => {
       {/* Middle — chat window */}
       <div className="inbox__chat">
         <div className="inbox__chat-header">
-          <div className="inbox__chat-avatar">{currentChat?.name?.[0] || '?'}</div>
+          <div className="inbox__chat-avatar">
+            {String(currentChat?.name || '?')[0]}
+          </div>
           <div>
-            <div className="inbox__chat-name">{currentChat?.name || 'Unknown'}</div>
-            <div className="inbox__chat-meta">{currentChat?.meta || 'Loading...'}</div>
+            <div className="inbox__chat-name">
+              {String(currentChat?.name || 'Unknown')}
+            </div>
+            <div className="inbox__chat-meta">
+              {String(currentChat?.meta || 'Loading...')}
+            </div>
           </div>
           <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
             <span className={`badge badge--${currentConvo?.priority === 'urgent' ? 'red' : currentConvo?.priority === 'high' ? 'yellow' : 'ghost'}`}>
-              {currentConvo?.priority || 'normal'}
+              {String(currentConvo?.priority || 'normal')}
             </span>
             <span className={`badge badge--${currentConvo?.status === 'resolved' ? 'green' : 'ghost'}`}>
-              {currentConvo?.status || 'open'}
+              {String(currentConvo?.status || 'open')}
             </span>
           </div>
         </div>
@@ -297,11 +395,20 @@ const Inbox = ({ initialCustomerId }) => {
               {m.from === 'ai' && (
                 <div className="inbox__msg-ai-badge">
                   <Bot size={12} />
-                  AI Copilot
+                  AI Assistant
+                  {m.aiConfidence && (
+                    <span className="inbox__msg-confidence">
+                      {Math.round(m.aiConfidence * 100)}%
+                    </span>
+                  )}
                 </div>
               )}
-              <div className="inbox__msg-bubble">{m.text}</div>
-              <div className="inbox__msg-time">{m.time}</div>
+              <div className="inbox__msg-bubble">
+                {String(m.text || m.content || '')}
+              </div>
+              <div className="inbox__msg-time">
+                {String(m.time || '')}
+              </div>
             </div>
           ))}
         </div>
@@ -357,20 +464,36 @@ const Inbox = ({ initialCustomerId }) => {
 
         <div className="inbox__copilot-section">
           <div className="inbox__copilot-label">Customer Info</div>
-          <div className="inbox__info-row"><span>Name</span><strong>{currentChat?.customerInfo?.name || 'N/A'}</strong></div>
-          <div className="inbox__info-row"><span>Email</span><strong>{currentChat?.customerInfo?.email || 'N/A'}</strong></div>
-          <div className="inbox__info-row"><span>Order</span><strong>{currentChat?.customerInfo?.order || 'N/A'}</strong></div>
-          <div className="inbox__info-row"><span>Plan</span><strong>{currentChat?.customerInfo?.plan || 'N/A'}</strong></div>
+          <div className="inbox__info-row">
+            <span>Name</span>
+            <strong>{String(currentChat?.customerInfo?.name || 'N/A')}</strong>
+          </div>
+          <div className="inbox__info-row">
+            <span>Email</span>
+            <strong>{String(currentChat?.customerInfo?.email || 'N/A')}</strong>
+          </div>
         </div>
 
         <div className="inbox__copilot-section">
-          <div className="inbox__copilot-label">AI Confidence</div>
-          <div className="inbox__confidence">
-            <div className="inbox__confidence-bar">
-              <div className="inbox__confidence-fill" style={{ width:'84%' }} />
-            </div>
-            <span className="inbox__confidence-val">84%</span>
+          <div className="inbox__copilot-label">Assigned Agent</div>
+          <div className="inbox__info-row">
+            <span>Agent</span>
+            <strong>
+              {currentChat?.assignedTo
+                ? `${currentChat.assignedTo.firstName || ''} ${currentChat.assignedTo.lastName || ''}`.trim()
+                : 'Unassigned'}
+            </strong>
           </div>
+          {!currentChat?.assignedTo && (
+            <button
+              className="db-btn db-btn--ghost inbox__assign-btn"
+              onClick={handleAssignToMe}
+              disabled={assigningTicket}
+            >
+              <UserCheck size={13} />
+              {assigningTicket ? 'Assigning…' : 'Assign to me'}
+            </button>
+          )}
         </div>
       </div>
     </div>

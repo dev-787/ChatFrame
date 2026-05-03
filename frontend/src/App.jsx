@@ -45,11 +45,11 @@ const App = () => {
             } 
           />
           
-          {/* Protected routes with role-based access */}
+          {/* Protected routes */}
           <Route 
             path="/dashboard" 
             element={
-              <ProtectedRoute requireAuth={true} allowedRoles={['company_admin']}>
+              <ProtectedRoute requireAuth={true}>
                 <Dashboard />
               </ProtectedRoute>
             } 
@@ -57,11 +57,7 @@ const App = () => {
           
           <Route 
             path="/workspace" 
-            element={
-              <ProtectedRoute requireAuth={true} allowedRoles={['support_agent']}>
-                <Workspace />
-              </ProtectedRoute>
-            } 
+            element={<Navigate to="/dashboard" replace />}
           />
 
         </Routes>

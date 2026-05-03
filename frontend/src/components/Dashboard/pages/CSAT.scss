@@ -1,12 +1,39 @@
 .csat {
-  &__review {
-    &--negative {
-      background: rgba(255,100,100,0.04);
-      border-color: rgba(255,100,100,0.15);
-    }
+  &__coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 40px;
+    gap: 16px;
   }
-  &__review-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  &__review-name   { font-size:13px; font-weight:600; color:var(--text); }
-  &__stars         { font-size:13px; color:var(--yellow); letter-spacing:1px; }
-  &__review-text   { font-size:13px; color:var(--text-2); font-style:italic; line-height:1.6; }
+
+  &__coming-soon-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--yellow-dim);
+    border: 1px solid rgba(255, 210, 80, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+
+  &__coming-soon-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+
+  &__coming-soon-text {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.7;
+    max-width: 420px;
+    margin: 0;
+  }
 }

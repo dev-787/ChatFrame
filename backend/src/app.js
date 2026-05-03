@@ -9,8 +9,29 @@ const AppError = require("./utils/AppError");
 
 const app = express();
 
+// ─── Special CORS for Widget Routes (must be BEFORE helmet) ──────
+// These routes are embedded on third-party sites — need full cross-origin access
+const widgetCors = cors({
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+});
+
+app.use("/api/widget", widgetCors);
+app.options("/api/widget/*", widgetCors); // preflight
+
+// For widget routes, override helmet's cross-origin-resource-policy
+app.use("/api/widget", (req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  next();
+});
+
 // ─── Security ────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // allow widget.js to load cross-origin
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ─── CORS ────────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")

@@ -36,6 +36,10 @@ const updateWidgetConfig = async (tenantId, updates) => {
  * Generate the embed script snippet for a tenant's widget.
  */
 const generateEmbedScript = (widgetKey, config) => {
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://api.chatframe.io' 
+    : 'http://localhost:5000';
+    
   return `<!-- ChatFrame Widget -->
 <script>
   window.ChatFrameConfig = {
@@ -47,7 +51,7 @@ const generateEmbedScript = (widgetKey, config) => {
     var js,fjs=d.getElementsByTagName(s)[0];
     if(d.getElementById(id))return;
     js=d.createElement(s);js.id=id;
-    js.src="https://cdn.chatframe.io/widget.js";
+    js.src="${baseUrl}/api/widget/widget.js";
     fjs.parentNode.insertBefore(js,fjs);
   }(document,'script','chatframe-sdk'));
 </script>`;

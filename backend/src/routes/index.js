@@ -8,16 +8,15 @@ const agentOnboardingRoutes = require("./onboarding/agentRoutes");
 
 // ─── Phase 2 routes (new) ─────────────────────────────────────────
 const dashboardRoutes = require("./dashboardRoutes");
+const widgetRoutes = require("./widgetRoutes");
 
-// ─── Mount ────────────────────────────────────────────────────────
+// ─── Public Routes (no auth required) ────────────────────────────
 router.use("/auth", authRoutes);
 router.use("/onboard/company", companyOnboardingRoutes);
 router.use("/onboard/agent", agentOnboardingRoutes);
+router.use("/widget", widgetRoutes);
 
-// All Phase 2 dashboard routes under /api/*
-router.use("/", dashboardRoutes);
-
-// Health check
+// Health check (public)
 router.get("/health", (req, res) => {
   res.json({
     success: true,
@@ -26,5 +25,8 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── Protected Routes (auth required) ─────────────────────────────
+router.use("/", dashboardRoutes);
 
 module.exports = router;

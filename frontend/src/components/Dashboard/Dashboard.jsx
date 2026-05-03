@@ -15,6 +15,8 @@ import CSAT from './pages/CSAT';
 import Billing from './pages/Billing';
 import OrgSettings from './pages/OrgSettings';
 import MyProfile from './pages/MyProfile';
+import Integrations from './pages/Integrations';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PAGES = {
   dashboard:    DashboardHome,
@@ -24,6 +26,7 @@ const PAGES = {
   aiconfig:     AIConfig,
   aiinsights:   AIInsights,
   chatwidget:   ChatWidget,
+  integrations: Integrations,
   teamagents:   TeamAgents,
   notifications: Notifications,
   csat:         CSAT,
@@ -33,7 +36,13 @@ const PAGES = {
 };
 
 const Dashboard = () => {
-  const [activePage, setActivePage] = useState('dashboard');
+  const { user } = useAuth();
+  const isAgent = user?.role === 'support_agent';
+
+  const [activePage, setActivePage] = useState(
+    // Agents default to inbox; admins default to dashboard
+    isAgent ? 'inbox' : 'dashboard'
+  );
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [inboxCustomerId, setInboxCustomerId] = useState(null);

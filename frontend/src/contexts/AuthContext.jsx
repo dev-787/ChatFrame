@@ -111,16 +111,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getRoleBasedRoute = () => {
-    if (!user) return '/';
-    
-    switch (user.role) {
-      case 'company_admin':
-        return '/dashboard';
-      case 'support_agent':
-        return '/workspace';
-      default:
-        return '/dashboard';
-    }
+    return '/dashboard';
   };
 
   const getDefaultRoute = () => {

@@ -14,6 +14,7 @@ import {
 import './DashboardHome.scss';
 import apiService from '../../../services/api';
 import socketService from '../../../services/socket';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -26,6 +27,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const DashboardHome = () => {
+  const { getFullName } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,24 +73,39 @@ const DashboardHome = () => {
       const response = await apiService.getDashboardOverview();
       
       if (response.success && response.data) {
-        setDashboardData(response.data);
+        const { summary, ticketTrend, recentActivity } = response.data;
+
+        // Map backend shape → component shape
+        const stats = summary ? [
+          { label: 'Total Tickets',        value: summary.totalTickets ?? 0,       delta: 'All time',   color: 'ghost' },
+          { label: 'Active Conversations', value: summary.activeConversations ?? 0, delta: 'Open + In Progress', color: 'blue' },
+          { label: 'AI Resolution Rate',   value: `${summary.aiResolutionRate ?? 0}%`, delta: 'AI handled', color: 'green' },
+          { label: 'CSAT Score',           value: summary.csatScore ?? '—',        delta: 'Avg rating',  color: 'yellow' },
+        ] : [];
+
+        // Map ticketTrend [{date, count}] → [{day, tickets}]
+        const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const chartData = (ticketTrend || []).map(t => ({
+          day: DAY_LABELS[new Date(t.date).getDay()] ?? t.date,
+          tickets: t.count ?? 0,
+        }));
+
+        // Map recent tickets → activity items
+        const activityItems = (recentActivity || []).slice(0, 4).map(t => ({
+          icon: t.status === 'resolved' ? 'CheckCircle' : 'MessageCircle',
+          color: t.status === 'resolved' ? 'green' : t.priority === 'urgent' ? 'red' : 'blue',
+          text: `#${t.ticketNumber} — ${t.title}`,
+          time: new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }));
+
+        setDashboardData({ stats, chartData, recentActivity: activityItems });
       } else {
-        // Set empty data structure if API returns no data
-        setDashboardData({
-          stats: [],
-          chartData: [],
-          recentActivity: []
-        });
+        setDashboardData({ stats: [], chartData: [], recentActivity: [] });
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       setError(error.message);
-      // Set empty data structure on error
-      setDashboardData({
-        stats: [],
-        chartData: [],
-        recentActivity: []
-      });
+      setDashboardData({ stats: [], chartData: [], recentActivity: [] });
     } finally {
       setLoading(false);
     }
@@ -102,7 +119,7 @@ const DashboardHome = () => {
   return (
   <div className="db-page dash-home">
     <div className="db-page__header">
-      <h1 className="db-page__title">Good morning, Ada 👋</h1>
+      <h1 className="db-page__title">Good morning, {getFullName() || 'there'} 👋</h1>
       <p className="db-page__sub">Here's what's happening with your support system today.</p>
     </div>
 
@@ -192,38 +209,11 @@ const DashboardHome = () => {
                 </div>
               )}
             </div>
-
-            {/* Agent Response Time Insight */}
-            <div className="db-card dash-home__insight dash-home__insight--yellow">
-              <div className="dash-home__insight-icon dash-home__insight-icon--yellow">
-                <Clock size={16} />
-              </div>
-              <div>
-                <div className="dash-home__insight-title dash-home__insight-title--yellow">Agent Performance</div>
-                <p className="dash-home__insight-text">
-                  Average agent response time is <strong>5 minutes</strong> — maintaining excellent customer experience standards.
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Right column */}
           <div className="dash-home__right-col">
-            {/* AI insight */}
-            <div className="db-card dash-home__insight">
-              <div className="dash-home__insight-icon">
-                <MessageCircle size={16} />
-              </div>
-              <div>
-                <div className="dash-home__insight-title">AI Insight</div>
-                <p className="dash-home__insight-text">
-                  AI handled <strong>68%</strong> of support volume today —
-                  saving your team approximately <strong>4.2 hours</strong>.
-                </p>
-              </div>
-            </div>
-
-            {/* Activity */}
+          {/* Activity */}
             <div className="db-card dash-home__activity">
               <div className="dash-home__card-header">
                 <span className="dash-home__card-title">Recent Activity</span>

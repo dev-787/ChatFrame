@@ -294,12 +294,13 @@ class ApiService {
   }
 
   // Notification endpoints
-  async getNotifications() {
-    return this.get('/notifications');
+  async getNotifications(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.get(`/notifications${qs ? `?${qs}` : ''}`);
   }
 
-  async markNotificationsRead() {
-    return this.patch('/notifications/mark-read');
+  async markNotificationsRead(ids = []) {
+    return this.patch('/notifications/mark-read', { ids });
   }
 
   // CSAT endpoints

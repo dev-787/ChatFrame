@@ -1,9 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './ChatWidget.scss';
+import apiService from '../../../services/api';
 
 const ChatWidget = () => {
-  const [color, setColor] = useState('#a0ffb4');
-  const [welcome, setWelcome] = useState('Hi there 👋 How can we help?');
+  const [config, setConfig] = useState({
+    primaryColor: '#6366f1',
+    welcomeMessage: '👋 Hi there! How can we help you today?',
+    widgetPosition: 'bottom-right',
+    isOnline: true,
+    offlineMessage: 'We are currently offline. Leave us a message and we will get back to you.',
+    companyName: '',
+    showBranding: true
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadWidgetConfig();
+  }, []);
+
+  const loadWidgetConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getWidgetConfig();
+      if (response.success) {
+        setConfig(response.data.config);
+      }
+    } catch (error) {
+      console.error('Failed to load widget config:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfigChange = (field, value) => {
+    setConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveConfig = async () => {
+    try {
+      setSaving(true);
+      const response = await apiService.updateWidgetConfig(config);
+      if (response.success) {
+        setConfig(response.data.config);
+      }
+    } catch (error) {
+      console.error('Failed to save widget config:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="db-page chatwidget">
+        <div className="db-page__header">
+          <h1 className="db-page__title">Chat Widget</h1>
+          <p className="db-page__sub">Customize your embeddable support widget.</p>
+        </div>
+        <div className="chatwidget__loading">
+          <div className="loading-spinner"></div>
+          <p>Loading widget configuration...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="db-page chatwidget">
@@ -11,51 +72,137 @@ const ChatWidget = () => {
         <h1 className="db-page__title">Chat Widget</h1>
         <p className="db-page__sub">Customize your embeddable support widget.</p>
       </div>
+      
       <div className="two-col">
-        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+        <div className="chatwidget__settings">
+          {/* Appearance Settings */}
           <div className="db-card">
-            <div style={{ fontWeight:600, fontSize:13, marginBottom:16 }}>Customization</div>
+            <div className="chatwidget__section-title">Appearance</div>
+            
             <div className="chatwidget__field">
               <label>Primary Color</label>
-              <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                <input type="color" value={color} onChange={e => setColor(e.target.value)} className="chatwidget__color" />
-                <span style={{ fontSize:12, color:'var(--text-2)' }}>{color}</span>
+              <div className="chatwidget__color-input">
+                <input 
+                  type="color" 
+                  value={config.primaryColor} 
+                  onChange={e => handleConfigChange('primaryColor', e.target.value)}
+                  className="chatwidget__color" 
+                />
+                <span className="chatwidget__color-value">{config.primaryColor}</span>
               </div>
             </div>
+
+            <div className="chatwidget__field">
+              <label>Widget Position</label>
+              <select 
+                value={config.widgetPosition}
+                onChange={e => handleConfigChange('widgetPosition', e.target.value)}
+                className="db-input"
+              >
+                <option value="bottom-right">Bottom Right</option>
+                <option value="bottom-left">Bottom Left</option>
+              </select>
+            </div>
+
+            <div className="chatwidget__field">
+              <label>Company Name</label>
+              <input 
+                type="text"
+                value={config.companyName}
+                onChange={e => handleConfigChange('companyName', e.target.value)}
+                className="db-input"
+                placeholder="Your Company Name"
+              />
+            </div>
+          </div>
+
+          {/* Messages Settings */}
+          <div className="db-card">
+            <div className="chatwidget__section-title">Messages</div>
+            
             <div className="chatwidget__field">
               <label>Welcome Message</label>
-              <input className="db-input" value={welcome} onChange={e => setWelcome(e.target.value)} />
+              <textarea 
+                value={config.welcomeMessage}
+                onChange={e => handleConfigChange('welcomeMessage', e.target.value)}
+                className="db-input chatwidget__textarea"
+                placeholder="Hi there! How can we help?"
+                rows="3"
+              />
+            </div>
+
+            <div className="chatwidget__field">
+              <label>Offline Message</label>
+              <textarea 
+                value={config.offlineMessage}
+                onChange={e => handleConfigChange('offlineMessage', e.target.value)}
+                className="db-input chatwidget__textarea"
+                placeholder="We're currently offline..."
+                rows="3"
+              />
+            </div>
+
+            <div className="chatwidget__field">
+              <label className="chatwidget__toggle-row">
+                <span>Widget is online</span>
+                <label className="db-toggle">
+                  <input
+                    type="checkbox"
+                    checked={config.isOnline}
+                    onChange={e => handleConfigChange('isOnline', e.target.checked)}
+                  />
+                  <span className="db-toggle__track">
+                    <span className="db-toggle__thumb" />
+                  </span>
+                </label>
+              </label>
             </div>
           </div>
 
-          <div className="db-card">
-            <div style={{ fontWeight:600, fontSize:13, marginBottom:12 }}>Embed Code</div>
-            <div className="chatwidget__code">
-              <pre>{`<script
-  src="https://cdn.chatframe.io/v2/widget.js"
-  data-key="cf_live_••••••••"
-  defer
-></script>`}</pre>
-              <button className="db-btn db-btn--ghost" style={{ fontSize:11, padding:'4px 10px' }}>Copy</button>
-            </div>
-          </div>
+          {/* Save Button */}
+          <button 
+            onClick={saveConfig}
+            disabled={saving}
+            className="db-btn db-btn--primary"
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
 
+        {/* Live Preview */}
         <div className="chatwidget__preview">
-          <div className="chatwidget__window" style={{ '--wc': color }}>
+          <div className="chatwidget__preview-label">Live Preview</div>
+          <div className="chatwidget__window" style={{ '--primary-color': config.primaryColor }}>
             <div className="chatwidget__win-header">
-              <div className="chatwidget__win-title">ChatFrame Support</div>
-              <span style={{ color:'rgba(255,255,255,0.6)', fontSize:18, cursor:'pointer' }}>×</span>
+              <div className="chatwidget__win-title">
+                {config.companyName || 'ChatFrame'} Support
+              </div>
+              <div className="chatwidget__win-status">
+                <span className={`chatwidget__status-dot ${config.isOnline ? 'online' : 'offline'}`}></span>
+                <span className="chatwidget__status-text">
+                  {config.isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+              <button className="chatwidget__win-close">×</button>
             </div>
             <div className="chatwidget__win-body">
-              <div className="chatwidget__win-bubble">{welcome}</div>
+              <div className="chatwidget__win-bubble">
+                {config.isOnline ? config.welcomeMessage : config.offlineMessage}
+              </div>
             </div>
             <div className="chatwidget__win-input">
-              <input placeholder="Type a message…" readOnly />
-              <button style={{ background: color, border:'none', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:12, fontWeight:600 }}>→</button>
+              <input 
+                placeholder={config.isOnline ? "Type a message…" : "Leave a message..."}
+                readOnly 
+              />
+              <button 
+                className="chatwidget__send-btn"
+                style={{ backgroundColor: config.primaryColor }}
+              >
+                →
+              </button>
             </div>
           </div>
-          <p style={{ textAlign:'center', fontSize:11, color:'var(--text-3)', marginTop:16 }}>Live preview</p>
         </div>
       </div>
     </div>

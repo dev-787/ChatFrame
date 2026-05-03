@@ -1,50 +1,141 @@
+import { useState } from 'react';
 import './Billing.scss';
 
-const HISTORY = [
-  { date:'May 1, 2026',  amount:'$49',  status:'paid' },
-  { date:'Apr 1, 2026',  amount:'$49',  status:'paid' },
-  { date:'Mar 1, 2026',  amount:'$29',  status:'paid' },
+const PLANS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    tagline: 'Get started with ChatFrame at no cost',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    cta: 'Current Plan',
+    current: true,
+    features: [
+      '500 AI responses per month',
+      '1 workspace',
+      'Basic analytics',
+      'Email support',
+      'Chat widget customization',
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    tagline: 'Unlock powerful AI support features',
+    monthlyPrice: 29,
+    yearlyPrice: 22,
+    popular: true,
+    cta: 'Coming Soon',
+    features: [
+      'Unlimited AI responses',
+      '5 workspaces',
+      'Advanced analytics & CSAT',
+      'Priority support',
+      'Custom AI training',
+      'Webhook integrations',
+    ],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    tagline: 'Full control for large-scale teams',
+    monthlyPrice: 99,
+    yearlyPrice: 79,
+    cta: 'Contact Sales',
+    features: [
+      'Everything in Pro',
+      'Unlimited workspaces',
+      'Dedicated account manager',
+      'SLA guarantee',
+      'Custom contracts',
+      'On-premise deployment',
+    ],
+  },
 ];
 
-const Billing = () => (
-  <div className="db-page billing">
-    <div className="db-page__header">
-      <h1 className="db-page__title">Billing</h1>
-      <p className="db-page__sub">Manage your subscription and payment history.</p>
-    </div>
-    <div className="two-col">
-      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-        <div className="db-card billing__plan">
-          <div className="billing__plan-label">Current Plan</div>
-          <div className="billing__plan-name">Pro</div>
-          <div className="billing__plan-price">$49 <span>/ month</span></div>
-          <button className="db-btn db-btn--primary" style={{ marginTop:16, width:'100%' }}>
-            Upgrade to Enterprise
-          </button>
-        </div>
-        <div className="db-card">
-          <div style={{ fontWeight:600, fontSize:13, marginBottom:14 }}>AI Usage</div>
-          <div className="billing__usage-bar">
-            <div className="billing__usage-fill" style={{ width:'68%' }} />
-          </div>
-          <div style={{ display:'flex', justifyContent:'space-between', marginTop:8 }}>
-            <span style={{ fontSize:12, color:'var(--text-2)' }}>6,800 / 10,000 AI replies</span>
-            <span style={{ fontSize:12, color:'var(--green)' }}>68%</span>
-          </div>
-        </div>
+const Billing = () => {
+  const [yearly, setYearly] = useState(false);
+
+  return (
+    <div className="db-page billing">
+      <div className="db-page__header">
+        <h1 className="db-page__title">Billing & Plans</h1>
+        <p className="db-page__sub">You're on the free Starter plan. Paid plans are coming soon.</p>
       </div>
-      <div className="db-card">
-        <div style={{ fontWeight:600, fontSize:13, marginBottom:16 }}>Payment History</div>
-        {HISTORY.map((h,i) => (
-          <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 0', borderBottom:'1px solid var(--border)' }}>
-            <span style={{ fontSize:13, color:'var(--text-2)' }}>{h.date}</span>
-            <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{h.amount}</span>
-            <span className="badge badge--green">{h.status}</span>
-          </div>
-        ))}
+
+      {/* Toggle */}
+      <div className="billing__toggle-wrap">
+        <span className={`billing__toggle-label${!yearly ? ' active' : ''}`}>Monthly</span>
+        <button
+          className={`billing__toggle${yearly ? ' billing__toggle--on' : ''}`}
+          onClick={() => setYearly(v => !v)}
+        >
+          <span className="billing__toggle-thumb" />
+        </button>
+        <span className={`billing__toggle-label${yearly ? ' active' : ''}`}>
+          Yearly
+          <span className="billing__save-badge">Save 25%</span>
+        </span>
+      </div>
+
+      {/* Plan cards */}
+      <div className="billing__cards">
+        {PLANS.map(plan => {
+          const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+          return (
+            <div
+              key={plan.id}
+              className={`billing__card${plan.popular ? ' billing__card--popular' : ''}${plan.current ? ' billing__card--current' : ''}`}
+            >
+              {plan.popular && <div className="billing__card-glow" />}
+
+              <div className="billing__card-header">
+                <span className="billing__plan-name">{plan.name}</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {plan.current  && <span className="badge badge--green">Current</span>}
+                  {plan.popular  && <span className="badge badge--ghost">Popular</span>}
+                </div>
+              </div>
+
+              <p className="billing__plan-tagline">{plan.tagline}</p>
+
+              <div className="billing__price-wrap">
+                {price === 0 ? (
+                  <span className="billing__price-free">Free</span>
+                ) : (
+                  <>
+                    <span className="billing__price-dollar">$</span>
+                    <span className="billing__price-num">{price}</span>
+                    <span className="billing__price-period">/mo</span>
+                  </>
+                )}
+              </div>
+
+              <div className="billing__divider" />
+
+              <ul className="billing__features">
+                {plan.features.map(f => (
+                  <li key={f} className="billing__feature">
+                    <svg className="billing__check" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                className={`billing__cta${plan.current ? ' billing__cta--current' : ''}`}
+                disabled={plan.current || plan.id === 'pro'}
+              >
+                {plan.cta}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default Billing;

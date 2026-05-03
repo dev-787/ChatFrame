@@ -9,19 +9,19 @@ import {
   MessageSquare,
   Puzzle,
   Users,
-  Bell,
   Star,
   CreditCard,
   Settings,
   User
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const NAV = [
   {
     group: 'OVERVIEW',
     items: [
       { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-      { id: 'inbox',        label: 'Inbox',         icon: Inbox, badge: 4 },
+      { id: 'inbox',        label: 'Inbox',         icon: Inbox },
       { id: 'tickets',      label: 'Tickets',       icon: Ticket },
       { id: 'analytics',    label: 'Analytics',     icon: BarChart3 },
     ],
@@ -39,7 +39,6 @@ const NAV = [
     group: 'TEAM',
     items: [
       { id: 'teamagents',   label: 'Team & Agents',   icon: Users },
-      { id: 'notifications',label: 'Notifications',   icon: Bell, badge: 2 },
       { id: 'csat',         label: 'CSAT / Feedback', icon: Star },
     ],
   },
@@ -53,11 +52,23 @@ const NAV = [
   },
 ];
 
+// Pages visible to all roles
+const AGENT_ALLOWED = new Set(['inbox', 'tickets', 'myprofile']);
+
 const Sidebar = ({ activePage, setActivePage, open, setOpen }) => {
+  const { getFullName, user } = useAuth();
+  const isAgent = user?.role === 'support_agent';
+  const fullName = getFullName() || 'User';
+  const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const roleLabel = user?.role === 'company_admin' ? 'Owner' : user?.role === 'support_agent' ? 'Agent' : 'Member';
+
+  // Filter nav sections based on role
+  const visibleNav = NAV.map(section => ({
+    ...section,
+    items: section.items.filter(item => !isAgent || AGENT_ALLOWED.has(item.id)),
+  })).filter(section => section.items.length > 0);
   const handleSidebarClick = (e) => {
-    // Only handle click if sidebar is closed and we're on desktop
     if (!open && window.innerWidth > 768) {
-      // Don't open if clicking on a navigation item (let the item handle its own click)
       if (!e.target.closest('.sidebar__item')) {
         setOpen(true);
       }
@@ -85,7 +96,7 @@ const Sidebar = ({ activePage, setActivePage, open, setOpen }) => {
 
       {/* Nav */}
       <nav className="sidebar__nav">
-        {NAV.map(section => (
+        {visibleNav.map(section => (
           <div key={section.group} className="sidebar__group">
             {open && (
               <span className="sidebar__group-label">{section.group}</span>
@@ -116,10 +127,10 @@ const Sidebar = ({ activePage, setActivePage, open, setOpen }) => {
       {/* Footer */}
       {open && (
         <div className="sidebar__footer">
-          <div className="sidebar__avatar">CF</div>
+          <div className="sidebar__avatar">{initials}</div>
           <div className="sidebar__user">
-            <span className="sidebar__user-name">Ada Lovelace</span>
-            <span className="sidebar__user-role">Owner</span>
+            <span className="sidebar__user-name">{fullName}</span>
+            <span className="sidebar__user-role">{roleLabel}</span>
           </div>
           <div className="sidebar__status">
             <span className="sidebar__status-dot" />

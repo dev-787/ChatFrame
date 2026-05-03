@@ -47,6 +47,19 @@ const bootstrap = async () => {
       console.log(`🌐 http://localhost:${PORT}/api/health\n`);
     });
 
+    httpServer.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`❌ Port ${PORT} is already in use. Retrying in 2s...`);
+        setTimeout(() => {
+          httpServer.close();
+          httpServer.listen(PORT);
+        }, 2000);
+      } else {
+        console.error("❌ Server error:", err);
+        process.exit(1);
+      }
+    });
+
     // ─── Graceful shutdown ───
     const shutdown = async (signal) => {
       console.log(`\n⚠️  ${signal} received. Shutting down gracefully...`);
@@ -72,7 +85,10 @@ const bootstrap = async () => {
 
     process.on("uncaughtException", (err) => {
       console.error("❌ Uncaught Exception:", err);
-      process.exit(1);
+      // Don't exit on EADDRINUSE — let the server retry
+      if (err.code !== "EADDRINUSE") {
+        process.exit(1);
+      }
     });
   } catch (err) {
     console.error("❌ Bootstrap failed:", err.message);

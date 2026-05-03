@@ -18,3 +18,8 @@ build
 # editors
 .vscode
 .idea
+
+# Widget testing files
+test-widget*.html
+debug-widget*.html
+simple-widget*.html
