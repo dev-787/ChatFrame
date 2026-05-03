@@ -1,23 +1,23 @@
 const express = require("express");
 const router = express.Router();
 
-// ─── Sub-routers ─────────────────────────────────────────────────
+// ─── Phase 1 routes (already exist) ──────────────────────────────
 const authRoutes = require("./authRoutes");
 const companyOnboardingRoutes = require("./onboarding/companyRoutes");
 const agentOnboardingRoutes = require("./onboarding/agentRoutes");
 
-// ─── Mount ───────────────────────────────────────────────────────
+// ─── Phase 2 routes (new) ─────────────────────────────────────────
+const dashboardRoutes = require("./dashboardRoutes");
 
-// Auth: /api/auth/*
+// ─── Mount ────────────────────────────────────────────────────────
 router.use("/auth", authRoutes);
-
-// Company onboarding: /api/onboard/company/*
 router.use("/onboard/company", companyOnboardingRoutes);
-
-// Agent onboarding: /api/onboard/agent/*
 router.use("/onboard/agent", agentOnboardingRoutes);
 
-// Health check — no auth required
+// All Phase 2 dashboard routes under /api/*
+router.use("/", dashboardRoutes);
+
+// Health check
 router.get("/health", (req, res) => {
   res.json({
     success: true,

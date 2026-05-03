@@ -7,7 +7,6 @@ import Inbox from './pages/Inbox';
 import Tickets from './pages/Tickets';
 import Analytics from './pages/Analytics';
 import AIConfig from './pages/AIConfig';
-import KnowledgeBase from './pages/KnowledgeBase';
 import AIInsights from './pages/AIInsights';
 import ChatWidget from './pages/ChatWidget';
 import TeamAgents from './pages/TeamAgents';
@@ -23,7 +22,6 @@ const PAGES = {
   tickets:      Tickets,
   analytics:    Analytics,
   aiconfig:     AIConfig,
-  knowledgebase: KnowledgeBase,
   aiinsights:   AIInsights,
   chatwidget:   ChatWidget,
   teamagents:   TeamAgents,

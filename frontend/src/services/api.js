@@ -20,6 +20,11 @@ class ApiService {
     this.token = this.getStoredToken();
   }
 
+  // Validate MongoDB ObjectId
+  isValidObjectId(id) {
+    return id && typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+  }
+
   // Token management
   getStoredToken() {
     return localStorage.getItem('cf_token');
@@ -62,6 +67,16 @@ class ApiService {
     try {
       const response = await fetch(url, config);
       const data = await response.json();
+
+      // Handle 401 - unauthorized (token expired/invalid)
+      if (response.status === 401) {
+        this.clearAuth();
+        // Redirect to login if we're in a browser environment
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new ApiError('Authentication required', 401);
+      }
 
       // Handle rate limiting
       if (response.status === 429) {
@@ -135,6 +150,14 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', ...options });
   }
 
+  async patch(endpoint, data, options = {}) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
   // Authentication endpoints
   async login(credentials) {
     const response = await this.post('/auth/login', credentials);
@@ -193,8 +216,122 @@ class ApiService {
   }
 
   // Dashboard endpoints
-  async getDashboardData() {
-    return this.get('/dashboard');
+  async getDashboardOverview() {
+    return this.get('/dashboard/overview');
+  }
+
+  // Ticket endpoints
+  async getTickets(filters = {}) {
+    const params = new URLSearchParams(filters);
+    return this.get(`/tickets?${params}`);
+  }
+
+  async createTicket(data) {
+    return this.post('/tickets', data);
+  }
+
+  async updateTicket(id, data) {
+    if (!this.isValidObjectId(id)) {
+      throw new ApiError('Invalid ticket ID format', 400);
+    }
+    return this.patch(`/tickets/${id}`, data);
+  }
+
+  // Inbox endpoints
+  async getInboxConversations() {
+    return this.get('/inbox/conversations');
+  }
+
+  async getInboxTicket(ticketId) {
+    if (!this.isValidObjectId(ticketId)) {
+      throw new ApiError('Invalid ticket ID format', 400);
+    }
+    return this.get(`/inbox/${ticketId}`);
+  }
+
+  async sendMessage(ticketId, data) {
+    if (!this.isValidObjectId(ticketId)) {
+      throw new ApiError('Invalid ticket ID format', 400);
+    }
+    return this.post(`/inbox/${ticketId}/send`, data);
+  }
+
+  // Analytics endpoints
+  async getAnalyticsOverview(range = '30d') {
+    return this.get(`/analytics/overview?range=${range}`);
+  }
+
+  // AI Config endpoints
+  async getAIConfig() {
+    return this.get('/ai-config');
+  }
+
+  async updateAIConfig(data) {
+    return this.patch('/ai-config', data);
+  }
+
+  // AI Insights endpoints
+  async getAIInsights() {
+    return this.get('/ai-insights');
+  }
+
+  // Widget endpoints
+  async getWidgetConfig() {
+    return this.get('/widget-config');
+  }
+
+  async updateWidgetConfig(data) {
+    return this.patch('/widget-config', data);
+  }
+
+  // Team endpoints
+  async getTeam() {
+    return this.get('/team');
+  }
+
+  async getTeamInviteCode() {
+    return this.get('/team/invite-code');
+  }
+
+  // Notification endpoints
+  async getNotifications() {
+    return this.get('/notifications');
+  }
+
+  async markNotificationsRead() {
+    return this.patch('/notifications/mark-read');
+  }
+
+  // CSAT endpoints
+  async getCSAT() {
+    return this.get('/csat');
+  }
+
+  // Organization endpoints
+  async getOrganization() {
+    return this.get('/organization');
+  }
+
+  async updateOrganization(data) {
+    return this.patch('/organization', data);
+  }
+
+  // Profile endpoints
+  async getProfile() {
+    return this.get('/profile');
+  }
+
+  async updateProfile(data) {
+    return this.patch('/profile', data);
+  }
+
+  async updatePassword(data) {
+    return this.patch('/profile/password', data);
+  }
+
+  // Billing endpoints
+  async getBilling() {
+    return this.get('/billing');
   }
 }
 

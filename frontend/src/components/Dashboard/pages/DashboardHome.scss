@@ -142,3 +142,75 @@
     color: #f0f0f0;
   }
 }
+
+// Loading and error states
+.dashboard-loading,
+.dashboard-error,
+.tickets__loading,
+.tickets__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: rgba(250, 250, 250, 0.6);
+
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid rgba(160, 255, 180, 0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+  }
+
+  .retry-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #fafafa;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+// Empty states for dashboard components
+.dashboard-empty,
+.chart-empty,
+.activity-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: rgba(250, 250, 250, 0.4);
+  font-size: 14px;
+  grid-column: 1 / -1; // Span all columns in stats grid
+}
+
+.chart-empty {
+  height: 134px;
+  padding: 20px;
+}
+
+.activity-empty {
+  padding: 20px;
+}

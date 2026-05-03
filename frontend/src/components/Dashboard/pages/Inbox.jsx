@@ -1,182 +1,230 @@
 import { useState, useEffect } from 'react';
 import { Search, Paperclip, Send, Bot } from 'lucide-react';
 import './Inbox.scss';
-
-const CONVOS = [
-  { id:1, name:'Priya S.',   preview:'My order hasn\'t arrived…',     time:'2m',  priority:'urgent', unread:3, status:'open' },
-  { id:2, name:'Tom B.',     preview:'Can\'t access my account at all', time:'8m',  priority:'high',   unread:1, status:'open' },
-  { id:3, name:'Lena K.',    preview:'Refund still pending since Monday', time:'15m', priority:'normal', unread:0, status:'open' },
-  { id:4, name:'James R.',   preview:'How do I upgrade my plan?',     time:'1h',  priority:'low',    unread:0, status:'open' },
-  { id:5, name:'Mia C.',     preview:'Thanks, issue resolved!',       time:'2h',  priority:'normal', unread:0, status:'resolved' },
-  { id:6, name:'Omar H.',    preview:'Need help with setup',         time:'1d',  priority:'normal', unread:2, status:'open' },
-  { id:7, name:'Nina W.',    preview:'Great service, thank you!',     time:'2d',  priority:'normal', unread:0, status:'resolved' },
-];
-
-const CHAT_DATA = {
-  1: {
-    name: 'Priya S.',
-    meta: 'Order #8821 · Delivery issue',
-    messages: [
-      { from:'customer', text:'Hi, my order #8821 was supposed to arrive yesterday but I still haven\'t received it.', time:'10:22 AM' },
-      { from:'agent', text:'Hi Priya! I\'m looking into this right now. Let me check with our logistics team.', time:'10:24 AM' },
-      { from:'customer', text:'It\'s been 3 days past the expected delivery date. This is really frustrating.', time:'10:25 AM' },
-      { from:'ai', text:'Based on order #8821, the package was scanned at the regional hub 18 hours ago. There may be a local delay.', time:'10:26 AM' },
-    ],
-    suggestions: [
-      'I\'ve escalated this to our logistics team. You\'ll receive an update within 2 hours.',
-      'I\'m sorry for the inconvenience. I\'ll arrange a replacement or full refund for you right away.',
-    ],
-    customerInfo: {
-      name: 'Priya Singh',
-      email: 'priya@email.com',
-      order: '#8821',
-      plan: 'Standard'
-    }
-  },
-  2: {
-    name: 'Tom B.',
-    meta: 'Account Access · Login Issue',
-    messages: [
-      { from:'customer', text:'I can\'t access my account at all. It keeps saying invalid credentials.', time:'9:15 AM' },
-      { from:'agent', text:'Hi Tom! Let me help you with that. Can you confirm the email address you\'re using?', time:'9:17 AM' },
-      { from:'customer', text:'Yes, it\'s tom.brown@company.com', time:'9:18 AM' },
-    ],
-    suggestions: [
-      'I\'ll send you a password reset link to tom.brown@company.com right now.',
-      'Let me check if there are any security locks on your account.',
-    ],
-    customerInfo: {
-      name: 'Tom Brown',
-      email: 'tom.brown@company.com',
-      order: 'N/A',
-      plan: 'Premium'
-    }
-  },
-  3: {
-    name: 'Lena K.',
-    meta: 'Refund Request · Billing',
-    messages: [
-      { from:'customer', text:'My refund has been pending since Monday. When will it be processed?', time:'8:30 AM' },
-      { from:'agent', text:'Hi Lena! I can see your refund request. Let me check the status for you.', time:'8:32 AM' },
-    ],
-    suggestions: [
-      'Your refund is being processed and should appear in 3-5 business days.',
-      'I can expedite this refund for you. It should be processed within 24 hours.',
-    ],
-    customerInfo: {
-      name: 'Lena Kumar',
-      email: 'lena.k@email.com',
-      order: '#7654',
-      plan: 'Basic'
-    }
-  },
-  4: {
-    name: 'James R.',
-    meta: 'Plan Upgrade · Billing',
-    messages: [
-      { from:'customer', text:'How do I upgrade my plan? I need more features for my team.', time:'7:45 AM' },
-    ],
-    suggestions: [
-      'I can help you upgrade to our Premium plan which includes advanced team features.',
-      'Let me show you our available plans and their benefits.',
-    ],
-    customerInfo: {
-      name: 'James Rodriguez',
-      email: 'james.r@startup.com',
-      order: 'N/A',
-      plan: 'Basic'
-    }
-  },
-  5: {
-    name: 'Mia C.',
-    meta: 'Issue Resolved · Support',
-    messages: [
-      { from:'customer', text:'Thanks for your help! The issue is completely resolved now.', time:'6:20 AM' },
-      { from:'agent', text:'You\'re very welcome, Mia! Happy to help. Is there anything else I can assist you with?', time:'6:22 AM' },
-      { from:'customer', text:'No, that\'s everything. Great service!', time:'6:23 AM' },
-    ],
-    suggestions: [
-      'Thank you for the positive feedback! We\'re always here to help.',
-      'I\'m glad we could resolve this quickly for you.',
-    ],
-    customerInfo: {
-      name: 'Mia Chen',
-      email: 'mia.chen@email.com',
-      order: '#9876',
-      plan: 'Premium'
-    }
-  },
-  6: {
-    name: 'Omar H.',
-    meta: 'Setup Help · Technical',
-    messages: [
-      { from:'customer', text:'I need help setting up my account. The instructions are confusing.', time:'Yesterday' },
-    ],
-    suggestions: [
-      'I\'d be happy to walk you through the setup process step by step.',
-      'Let me send you our updated setup guide with screenshots.',
-    ],
-    customerInfo: {
-      name: 'Omar Hassan',
-      email: 'omar.h@email.com',
-      order: 'N/A',
-      plan: 'Basic'
-    }
-  },
-  7: {
-    name: 'Nina W.',
-    meta: 'Feedback · Resolved',
-    messages: [
-      { from:'customer', text:'Just wanted to say thank you for the excellent support!', time:'2 days ago' },
-      { from:'agent', text:'Thank you so much for the kind words, Nina! We really appreciate it.', time:'2 days ago' },
-    ],
-    suggestions: [
-      'Thank you for taking the time to share your feedback!',
-      'We\'re always here if you need any assistance in the future.',
-    ],
-    customerInfo: {
-      name: 'Nina Williams',
-      email: 'nina.w@email.com',
-      order: '#5432',
-      plan: 'Premium'
-    }
-  }
-};
+import apiService from '../../../services/api';
+import socketService from '../../../services/socket';
 
 const Inbox = ({ initialCustomerId }) => {
-  const [active, setActive] = useState(initialCustomerId || 1);
+  const [active, setActive] = useState(initialCustomerId || null);
   const [input, setInput] = useState('');
-  const [chatData, setChatData] = useState(CHAT_DATA);
+  const [chatData, setChatData] = useState({});
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  // Load conversations from API
+  useEffect(() => {
+    loadConversations();
+    
+    // Connect socket for real-time updates
+    if (!socketService.isConnected()) {
+      socketService.connect();
+    }
+
+    // Listen for new messages
+    const handleNewMessage = (message) => {
+      setChatData(prev => ({
+        ...prev,
+        [message.ticketId]: {
+          ...prev[message.ticketId],
+          messages: [...(prev[message.ticketId]?.messages || []), {
+            from: message.from,
+            text: message.text,
+            time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }]
+        }
+      }));
+    };
+
+    socketService.onNewMessage(handleNewMessage);
+
+    return () => {
+      socketService.offNewMessage(handleNewMessage);
+      if (active) {
+        socketService.leaveTicket(active);
+      }
+    };
+  }, []);
+
+  // Validate MongoDB ObjectId
+  const isValidObjectId = (id) => {
+    return id && typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+  };
+
+  // Join ticket room when active conversation changes
+  useEffect(() => {
+    if (active && isValidObjectId(active)) {
+      console.log("Joining ticket room:", active);
+      socketService.joinTicket(active);
+      loadTicketDetails(active);
+    }
+  }, [active]);
 
   // Update active customer when initialCustomerId changes
   useEffect(() => {
-    if (initialCustomerId) {
+    if (initialCustomerId && isValidObjectId(initialCustomerId)) {
       setActive(initialCustomerId);
     }
   }, [initialCustomerId]);
-  
-  const currentChat = chatData[active];
-  const currentConvo = CONVOS.find(c => c.id === active);
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getInboxConversations();
+      
+      if (response.success && response.data && Array.isArray(response.data.conversations)) {
+        setConversations(response.data.conversations);
+        
+        // Set first conversation as active if no active conversation and we have data
+        if (!active && response.data.conversations.length > 0) {
+          setActive(response.data.conversations[0]._id);
+        }
+      } else {
+        console.warn('Invalid conversations response:', response);
+        setConversations([]);
+      }
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+      setError(error.message);
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const newMessage = {
+  const loadTicketDetails = async (ticketId) => {
+    if (!isValidObjectId(ticketId)) {
+      console.error('Invalid ticket ID:', ticketId);
+      return;
+    }
+
+    try {
+      const response = await apiService.getInboxTicket(ticketId);
+      
+      if (response.success && response.data) {
+        setChatData(prev => ({
+          ...prev,
+          [ticketId]: response.data
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load ticket details:', error);
+      // Don't show error to user, just log it
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || sendingMessage || !isValidObjectId(active)) return;
+
+    const messageText = input.trim();
+    const tempMessage = {
       from: 'agent',
-      text: input.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      text: messageText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      sending: true
     };
 
+    // Optimistically add message to UI
     setChatData(prev => ({
       ...prev,
       [active]: {
         ...prev[active],
-        messages: [...prev[active].messages, newMessage]
+        messages: [...(prev[active]?.messages || []), tempMessage]
       }
     }));
 
     setInput('');
+    setSendingMessage(true);
+
+    try {
+      const response = await apiService.sendMessage(active, {
+        text: messageText,
+        type: 'agent_reply'
+      });
+
+      if (response.success && response.data) {
+        // Replace temp message with real message from server
+        setChatData(prev => ({
+          ...prev,
+          [active]: {
+            ...prev[active],
+            messages: prev[active].messages.map(msg => 
+              msg.sending ? {
+                ...msg,
+                sending: false,
+                id: response.data._id,
+                time: new Date(response.data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              } : msg
+            )
+          }
+        }));
+      } else {
+        // Just remove the sending flag if no proper response
+        setChatData(prev => ({
+          ...prev,
+          [active]: {
+            ...prev[active],
+            messages: prev[active].messages.map(msg => 
+              msg.sending ? { ...msg, sending: false } : msg
+            )
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Remove failed message and restore input
+      setChatData(prev => ({
+        ...prev,
+        [active]: {
+          ...prev[active],
+          messages: prev[active].messages.filter(msg => !msg.sending)
+        }
+      }));
+      setInput(messageText); // Restore input
+    } finally {
+      setSendingMessage(false);
+    }
   };
+
+  
+  const currentChat = chatData[active];
+  const currentConvo = conversations.find(c => c._id === active);
+
+  // Don't render if we don't have the required data
+  if (loading) {
+    return (
+      <div className="inbox">
+        <div className="inbox__loading">
+          <div className="loading-spinner"></div>
+          <p>Loading conversations...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (conversations.length === 0) {
+    return (
+      <div className="inbox">
+        <div className="inbox__loading">
+          <p>No conversations available</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!active || !currentChat) {
+    return (
+      <div className="inbox">
+        <div className="inbox__loading">
+          <div className="loading-spinner"></div>
+          <p>Loading conversation details...</p>
+        </div>
+      </div>
+    );
+  }
+
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -199,26 +247,26 @@ const Inbox = ({ initialCustomerId }) => {
             <input className="db-input" placeholder="Search conversations…" />
           </div>
         </div>
-        {CONVOS.map(c => (
+        {(conversations || []).map(c => (
           <div
-            key={c.id}
-            className={`inbox__convo ${active === c.id ? 'inbox__convo--active' : ''}`}
-            onClick={() => setActive(c.id)}
+            key={c._id}
+            className={`inbox__convo ${active === c._id ? 'inbox__convo--active' : ''}`}
+            onClick={() => setActive(c._id)}
           >
-            <div className="inbox__convo-avatar">{c.name[0]}</div>
+            <div className="inbox__convo-avatar">{c.customer?.name?.[0] || c.customerName?.[0] || '?'}</div>
             <div className="inbox__convo-body">
               <div className="inbox__convo-row">
-                <span className="inbox__convo-name">{c.name}</span>
-                <span className="inbox__convo-time">{c.time}</span>
+                <span className="inbox__convo-name">{c.customer?.name || c.customerName || 'Unknown'}</span>
+                <span className="inbox__convo-time">{c.lastActivity || c.time || 'N/A'}</span>
               </div>
               <div className="inbox__convo-row">
-                <span className="inbox__convo-preview">{c.preview}</span>
-                {c.unread > 0 && (
-                  <span className="inbox__convo-unread">{c.unread}</span>
+                <span className="inbox__convo-preview">{c.lastMessage || c.preview || 'No messages'}</span>
+                {c.unreadCount > 0 && (
+                  <span className="inbox__convo-unread">{c.unreadCount}</span>
                 )}
               </div>
               <span className={`badge badge--${c.priority === 'urgent' ? 'red' : c.priority === 'high' ? 'yellow' : 'ghost'}`}>
-                {c.priority}
+                {c.priority || 'normal'}
               </span>
             </div>
           </div>
@@ -228,23 +276,23 @@ const Inbox = ({ initialCustomerId }) => {
       {/* Middle — chat window */}
       <div className="inbox__chat">
         <div className="inbox__chat-header">
-          <div className="inbox__chat-avatar">{currentChat.name[0]}</div>
+          <div className="inbox__chat-avatar">{currentChat?.name?.[0] || '?'}</div>
           <div>
-            <div className="inbox__chat-name">{currentChat.name}</div>
-            <div className="inbox__chat-meta">{currentChat.meta}</div>
+            <div className="inbox__chat-name">{currentChat?.name || 'Unknown'}</div>
+            <div className="inbox__chat-meta">{currentChat?.meta || 'Loading...'}</div>
           </div>
           <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-            <span className={`badge badge--${currentConvo.priority === 'urgent' ? 'red' : currentConvo.priority === 'high' ? 'yellow' : 'ghost'}`}>
-              {currentConvo.priority}
+            <span className={`badge badge--${currentConvo?.priority === 'urgent' ? 'red' : currentConvo?.priority === 'high' ? 'yellow' : 'ghost'}`}>
+              {currentConvo?.priority || 'normal'}
             </span>
-            <span className={`badge badge--${currentConvo.status === 'resolved' ? 'green' : 'ghost'}`}>
-              {currentConvo.status}
+            <span className={`badge badge--${currentConvo?.status === 'resolved' ? 'green' : 'ghost'}`}>
+              {currentConvo?.status || 'open'}
             </span>
           </div>
         </div>
 
         <div className="inbox__messages">
-          {currentChat.messages.map((m, i) => (
+          {(currentChat?.messages || []).map((m, i) => (
             <div key={i} className={`inbox__msg inbox__msg--${m.from}`}>
               {m.from === 'ai' && (
                 <div className="inbox__msg-ai-badge">
@@ -275,10 +323,10 @@ const Inbox = ({ initialCustomerId }) => {
             <button 
               className="db-btn db-btn--primary"
               onClick={handleSendMessage}
-              disabled={!input.trim()}
+              disabled={!input.trim() || sendingMessage}
             >
               <Send size={14} />
-              Send
+              {sendingMessage ? 'Sending...' : 'Send'}
             </button>
           </div>
         </div>
@@ -296,7 +344,7 @@ const Inbox = ({ initialCustomerId }) => {
 
         <div className="inbox__copilot-section">
           <div className="inbox__copilot-label">Suggested Replies</div>
-          {currentChat.suggestions.map((s, i) => (
+          {(currentChat?.suggestions || []).map((s, i) => (
             <div 
               key={i} 
               className="inbox__suggestion" 
@@ -309,10 +357,10 @@ const Inbox = ({ initialCustomerId }) => {
 
         <div className="inbox__copilot-section">
           <div className="inbox__copilot-label">Customer Info</div>
-          <div className="inbox__info-row"><span>Name</span><strong>{currentChat.customerInfo.name}</strong></div>
-          <div className="inbox__info-row"><span>Email</span><strong>{currentChat.customerInfo.email}</strong></div>
-          <div className="inbox__info-row"><span>Order</span><strong>{currentChat.customerInfo.order}</strong></div>
-          <div className="inbox__info-row"><span>Plan</span><strong>{currentChat.customerInfo.plan}</strong></div>
+          <div className="inbox__info-row"><span>Name</span><strong>{currentChat?.customerInfo?.name || 'N/A'}</strong></div>
+          <div className="inbox__info-row"><span>Email</span><strong>{currentChat?.customerInfo?.email || 'N/A'}</strong></div>
+          <div className="inbox__info-row"><span>Order</span><strong>{currentChat?.customerInfo?.order || 'N/A'}</strong></div>
+          <div className="inbox__info-row"><span>Plan</span><strong>{currentChat?.customerInfo?.plan || 'N/A'}</strong></div>
         </div>
 
         <div className="inbox__copilot-section">

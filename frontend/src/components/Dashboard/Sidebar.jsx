@@ -5,7 +5,6 @@ import {
   Ticket,
   BarChart3,
   Bot,
-  BookOpen,
   Lightbulb,
   MessageSquare,
   Puzzle,
@@ -31,7 +30,6 @@ const NAV = [
     group: 'AI & CHANNELS',
     items: [
       { id: 'aiconfig',      label: 'AI Config',       icon: Bot },
-      { id: 'knowledgebase', label: 'Knowledge Base',  icon: BookOpen },
       { id: 'aiinsights',    label: 'AI Insights',     icon: Lightbulb },
       { id: 'chatwidget',    label: 'Chat Widget',     icon: MessageSquare },
       { id: 'integrations',  label: 'Integrations',    icon: Puzzle },

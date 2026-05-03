@@ -1,32 +1,21 @@
 const { verifyAccessToken } = require("../utils/jwt");
-const { getCachedUserSession } = require("../services/redisService");
+const { getCachedUserSession, cacheUserSession, invalidateUserSession } = require("../services/redisService");
+const { getRedis } = require("../config/redis");
 
-/**
- * initSockets — attaches Socket.io to the HTTP server
- * with JWT authentication middleware.
- *
- * @param {http.Server} httpServer
- * @param {SocketIO.Server} io
- */
 const initSockets = (io) => {
-  // ─── Auth middleware for every socket connection ───
+  // ─── Auth middleware ───────────────────────────────────────────
   io.use(async (socket, next) => {
     try {
       const token =
         socket.handshake.auth?.token ||
         socket.handshake.headers?.authorization?.split(" ")[1];
 
-      if (!token) {
-        return next(new Error("Authentication token is required."));
-      }
+      if (!token) return next(new Error("Authentication token is required."));
 
       const decoded = verifyAccessToken(token);
 
-      // Try Redis cache first for performance
       let sessionData = await getCachedUserSession(decoded.sub);
-
       if (!sessionData) {
-        // Fallback: rebuild from token payload
         sessionData = {
           userId: decoded.sub,
           email: decoded.email,
@@ -37,34 +26,77 @@ const initSockets = (io) => {
 
       socket.user = sessionData;
       next();
-    } catch (err) {
+    } catch {
       next(new Error("Invalid or expired authentication token."));
     }
   });
 
-  // ─── Connection handler ───
-  io.on("connection", (socket) => {
+  // ─── Connection ────────────────────────────────────────────────
+  io.on("connection", async (socket) => {
     const { userId, tenantId, role } = socket.user;
 
-    console.log(`🔌 Socket connected: userId=${userId} tenantId=${tenantId} role=${role}`);
+    console.log(`🔌 Connected: userId=${userId} role=${role} tenantId=${tenantId}`);
 
-    // Each user joins their tenant room for scoped broadcasts
-    if (tenantId) {
-      socket.join(`tenant:${tenantId}`);
-    }
+    // Join tenant room (scoped broadcasts)
+    if (tenantId) socket.join(`tenant:${tenantId}`);
 
-    // Join personal room (for direct notifications)
+    // Join personal room (notifications)
     socket.join(`user:${userId}`);
 
-    // ─── Disconnect ───
-    socket.on("disconnect", (reason) => {
-      console.log(`🔌 Socket disconnected: userId=${userId} reason=${reason}`);
+    // Mark agent online in Redis
+    try {
+      const redis = getRedis();
+      await redis.set(`online:${tenantId}:${userId}`, "1", "EX", 300); // 5 min TTL
+
+      // Broadcast updated online presence to tenant
+      io.to(`tenant:${tenantId}`).emit("agent:online", { userId });
+    } catch (err) {
+      console.error("Redis presence error:", err.message);
+    }
+
+    // ── Join a specific ticket/conversation room ─────────────────
+    socket.on("ticket:join", (ticketId) => {
+      socket.join(`ticket:${ticketId}`);
+      console.log(`📨 ${userId} joined ticket room: ${ticketId}`);
     });
 
-    // ─── Future: support conversation events ───
-    // socket.on("conversation:join", ...)
-    // socket.on("message:send", ...)
-    // socket.on("typing:start", ...)
+    socket.on("ticket:leave", (ticketId) => {
+      socket.leave(`ticket:${ticketId}`);
+    });
+
+    // ── Typing indicators ────────────────────────────────────────
+    socket.on("typing:start", ({ ticketId }) => {
+      socket.to(`ticket:${ticketId}`).emit("typing:start", {
+        userId,
+        ticketId,
+      });
+    });
+
+    socket.on("typing:stop", ({ ticketId }) => {
+      socket.to(`ticket:${ticketId}`).emit("typing:stop", {
+        userId,
+        ticketId,
+      });
+    });
+
+    // ── Heartbeat to keep online presence fresh ──────────────────
+    socket.on("heartbeat", async () => {
+      try {
+        const redis = getRedis();
+        await redis.expire(`online:${tenantId}:${userId}`, 300);
+      } catch {}
+    });
+
+    // ── Disconnect ───────────────────────────────────────────────
+    socket.on("disconnect", async (reason) => {
+      console.log(`🔌 Disconnected: userId=${userId} reason=${reason}`);
+
+      try {
+        const redis = getRedis();
+        await redis.del(`online:${tenantId}:${userId}`);
+        io.to(`tenant:${tenantId}`).emit("agent:offline", { userId });
+      } catch {}
+    });
   });
 };
 

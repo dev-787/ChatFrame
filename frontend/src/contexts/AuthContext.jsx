@@ -65,6 +65,12 @@ export const AuthProvider = ({ children }) => {
     } finally {
       apiService.clearAuth();
       setUser(null);
+      
+      // Disconnect socket on logout
+      if (typeof window !== 'undefined') {
+        const { default: socketService } = await import('../services/socket');
+        socketService.disconnect();
+      }
     }
   };
 
