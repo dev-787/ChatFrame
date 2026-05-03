@@ -53,6 +53,9 @@ const FAQ = () => {
 
   return (
     <section className="faq">
+      <div className="faq__label-top">
+        <span>Everything explained</span>
+      </div>
       <div className="faq__inner">
 
         <div className="faq__header">

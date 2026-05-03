@@ -12,7 +12,7 @@ $curve  : 40px;
 // ── Section shell ──────────────────────────────────────
 .workspace {
   background: $black;
-  padding: 0 $side clamp(60px, 8vw, 120px);
+  padding: 0 $side clamp(40px, 6vw, 80px);
   position: relative;
 
   &::before {

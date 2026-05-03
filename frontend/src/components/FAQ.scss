@@ -4,9 +4,32 @@
   background: #020202;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  padding: clamp(80px, 10vw, 140px) clamp(24px, 8vw, 0px);
+  padding: clamp(40px, 6vw, 60px) clamp(24px, 8vw, 0px);
   font-family: 'DM Sans', sans-serif;
+
+  &__label-top {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 32px;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 100px;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(250, 250, 250, 0.42);
+    }
+  }
 
   &__inner {
     width: 100%;
