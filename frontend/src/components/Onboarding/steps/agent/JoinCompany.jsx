@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { validateRequired, parseBackendErrors } from "../../../../utils/validation";
 
 const ShieldIcon = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -8,22 +9,70 @@ const ShieldIcon = () => (
   </svg>
 );
 
-const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish }) => {
+const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish, onSubmit, loading, fieldErrors }) => {
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const f = formData;
-  const set = (key) => (e) => updateForm({ [key]: e.target.value });
+  
+  const set = (key) => (e) => {
+    updateForm({ [key]: e.target.value });
+    setTouched(prev => ({ ...prev, [key]: true }));
+    
+    // Clear errors for this field when user starts typing
+    if (errors[key] || fieldErrors[key]) {
+      setErrors(prev => ({ ...prev, [key]: null }));
+    }
+  };
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors = {};
+    
+    if (touched.inviteCode) {
+      const validation = validateRequired(f.inviteCode, 'Invite code');
+      if (!validation.isValid) {
+        newErrors.inviteCode = validation.error;
+      }
+    }
+    
+    setErrors(newErrors);
+  }, [f, touched]);
+
+  const handleBlur = (fieldName) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }));
+  };
 
   const validate = () => {
     const errs = {};
-    if (!f.inviteCode?.trim()) errs.inviteCode = "Invite code is required";
+    const inviteCodeValidation = validateRequired(f.inviteCode, 'Invite code');
+    if (!inviteCodeValidation.isValid) {
+      errs.inviteCode = inviteCodeValidation.error;
+    }
+    
     setErrors(errs);
+    setTouched({ inviteCode: true });
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    if (isLast) onFinish();
-    else onNext();
+    
+    if (onSubmit) {
+      await onSubmit(f);
+    } else if (isLast) {
+      onFinish();
+    } else {
+      onNext();
+    }
+  };
+
+  // Merge local validation errors with API field errors
+  const allErrors = { ...errors, ...parseBackendErrors(fieldErrors) };
+  
+  const getFieldState = (fieldName) => {
+    if (allErrors[fieldName]) return 'error';
+    if (touched[fieldName] && f[fieldName]) return 'success';
+    return 'default';
   };
 
   return (
@@ -36,17 +85,18 @@ const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish })
         </p>
       </div>
 
-      <div className={`ob-field ob-field--code ${errors.inviteCode ? "ob-field--error" : ""}`}>
+      <div className={`ob-field ob-field--code ob-field--${getFieldState('inviteCode')}`}>
         <label>Company ID / Invite Code</label>
         <input
           type="text"
           placeholder="e.g. CF-XXXXXXXX"
           value={f.inviteCode || ""}
           onChange={set("inviteCode")}
+          onBlur={() => handleBlur('inviteCode')}
           spellCheck={false}
           autoComplete="off"
         />
-        {errors.inviteCode && <span className="ob-field__error">{errors.inviteCode}</span>}
+        {allErrors.inviteCode && <span className="ob-field__error">{allErrors.inviteCode}</span>}
       </div>
 
       <p className="join-company__note">
@@ -61,8 +111,8 @@ const JoinCompany = ({ formData, updateForm, onNext, onBack, isLast, onFinish })
           </span>
           Back
         </button>
-        <button className="ob-btn ob-btn--primary" type="button" onClick={handleSubmit}>
-          {isLast ? "Join workspace" : "Continue"}
+        <button className="ob-btn ob-btn--primary" type="button" onClick={handleSubmit} disabled={loading}>
+          {loading ? "Joining workspace..." : (isLast ? "Join workspace" : "Continue")}
           <span className="ob-arrow">
             <span className="ob-arrow__default"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             <span className="ob-arrow__hover"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></span>

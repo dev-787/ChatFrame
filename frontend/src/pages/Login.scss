@@ -141,6 +141,17 @@ $green:        rgba(160, 255, 180, 0.85);
     gap: 18px;
   }
 
+  // ── Error message ──
+  &__error {
+    background: rgba(255, 100, 100, 0.08);
+    border: 1px solid rgba(255, 100, 100, 0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: $error;
+    text-align: center;
+  }
+
   // ── Role selection ──
   &__roles {
     display: flex;
@@ -394,6 +405,18 @@ $green:        rgba(160, 255, 180, 0.85);
   &--error input {
     border-color: rgba(255, 100, 100, 0.4);
     box-shadow: 0 0 0 3px rgba(255, 100, 100, 0.06);
+    animation: fieldErrorShake 0.4s ease-out;
+  }
+
+  @keyframes fieldErrorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+  }
+
+  &--success input {
+    border-color: rgba(160, 255, 180, 0.4);
+    box-shadow: 0 0 0 3px rgba(160, 255, 180, 0.06);
   }
 
   &__label-row {

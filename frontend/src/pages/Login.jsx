@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import './Login.scss';
 import Logo from '../components/Logo/Logo';
+import apiService from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { validateEmail, parseBackendErrors } from '../utils/validation';
 
 const EyeIcon = ({ open }) =>
   open ? (
@@ -49,26 +53,113 @@ const Login = () => {
   const [form, setForm]         = useState({ email: "", password: "" });
   const [showPw, setShowPw]     = useState(false);
   const [errors, setErrors]     = useState({});
+  const [touched, setTouched]   = useState({});
   const [loading, setLoading]   = useState(false);
   const [done, setDone]         = useState(false);
+  const [error, setError]       = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+    setTouched(prev => ({ ...prev, [key]: true }));
+    
+    // Clear errors when user starts typing
+    if (errors[key] || fieldErrors[key]) {
+      setErrors(prev => ({ ...prev, [key]: null }));
+      setFieldErrors(prev => ({ ...prev, [key]: null }));
+    }
+  };
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors = {};
+    
+    if (touched.email) {
+      const emailValidation = validateEmail(form.email);
+      if (!emailValidation.isValid) {
+        newErrors.email = emailValidation.error;
+      }
+    }
+    
+    if (touched.password && form.password.length > 0 && form.password.length < 6) {
+      newErrors.password = "Password is too short";
+    }
+    
+    setErrors(newErrors);
+  }, [form, touched]);
+
+  const handleBlur = (fieldName) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }));
+  };
 
   const validate = () => {
     const errs = {};
-    if (!form.email.includes("@"))   errs.email    = "Enter a valid email";
-    if (form.password.length < 6)    errs.password = "Password is too short";
+    const emailValidation = validateEmail(form.email);
+    if (!emailValidation.isValid) {
+      errs.email = emailValidation.error;
+    }
+    if (form.password.length < 6) {
+      errs.password = "Password is too short";
+    }
+    
     setErrors(errs);
+    setTouched({ email: true, password: true });
     return Object.keys(errs).length === 0;
+  };
+
+  const getFieldState = (fieldName) => {
+    if (errors[fieldName] || fieldErrors[fieldName]) return 'error';
+    if (touched[fieldName] && form[fieldName]) return 'success';
+    return 'default';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1400));
-    setLoading(false);
-    setDone(true);
+    setError(null);
+    
+    try {
+      const response = await apiService.login(form.email, form.password);
+      
+      if (response.success) {
+        // Save auth data
+        login(response.data.user, response.data.token);
+        setDone(true);
+        
+        // Redirect after showing success screen
+        setTimeout(() => {
+          if (response.data.user.role === 'company_admin' || response.data.user.role === 'business') {
+            navigate('/dashboard');
+          } else if (response.data.user.role === 'support_agent' || response.data.user.role === 'agent') {
+            navigate('/workspace');
+          } else {
+            navigate('/dashboard');
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      if (error.message === 'Too many attempts, please wait') {
+        setError(error.message);
+        setFieldErrors({});
+      } else if (error.validationErrors) {
+        const errors = {};
+        error.validationErrors.forEach(err => {
+          errors[err.field] = err.message;
+        });
+        setFieldErrors(errors);
+        setError(null);
+      } else {
+        setError(error.message || 'Login failed. Please check your credentials.');
+        setFieldErrors({});
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -152,20 +243,29 @@ const Login = () => {
             </div>
 
             <form className="login__form" onSubmit={handleSubmit} noValidate>
-              <div className={`lf ${errors.email ? "lf--error" : ""}`}>
+              {error && (
+                <div className="login__error">
+                  {error}
+                </div>
+              )}
+              
+              <div className={`lf lf--${getFieldState('email')}`}>
                 <label>Email address</label>
                 <input
                   type="email"
                   placeholder="ada@company.com"
                   value={form.email}
                   onChange={set("email")}
+                  onBlur={() => handleBlur('email')}
                   autoComplete="email"
                   autoFocus
                 />
-                {errors.email && <span className="lf__error">{errors.email}</span>}
+                {(errors.email || fieldErrors.email) && (
+                  <span className="lf__error">{errors.email || fieldErrors.email}</span>
+                )}
               </div>
 
-              <div className={`lf lf--password ${errors.password ? "lf--error" : ""}`}>
+              <div className={`lf lf--password lf--${getFieldState('password')}`}>
                 <div className="lf__label-row">
                   <label>Password</label>
                   <a href="/forgot-password" className="lf__forgot">Forgot password?</a>
@@ -175,12 +275,15 @@ const Login = () => {
                   placeholder="Your password"
                   value={form.password}
                   onChange={set("password")}
+                  onBlur={() => handleBlur('password')}
                   autoComplete="current-password"
                 />
                 <button type="button" className="lf__eye" onClick={() => setShowPw((s) => !s)} tabIndex={-1}>
                   <EyeIcon open={showPw} />
                 </button>
-                {errors.password && <span className="lf__error">{errors.password}</span>}
+                {(errors.password || fieldErrors.password) && (
+                  <span className="lf__error">{errors.password || fieldErrors.password}</span>
+                )}
               </div>
 
               <button
