@@ -27,9 +27,9 @@ class AIService {
       this.model = this.genAI.getGenerativeModel({
         model: 'gemini-flash-latest',
         generationConfig: {
-          maxOutputTokens: 300,
-          temperature: 0.4,
-          topP: 0.9,
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+          topP: 0.95,
         },
       });
       console.log('✅ Gemini AI initialized (gemini-flash-latest)');
@@ -61,6 +61,14 @@ class AIService {
 
         const result = await this.model.generateContent(fullPrompt);
         const response = await result.response;
+        
+        // Log the full response for debugging
+        console.log('📝 Raw Gemini response:', JSON.stringify({
+          text: response.text(),
+          candidates: result.response.candidates?.length,
+          finishReason: result.response.candidates?.[0]?.finishReason
+        }));
+        
         const aiReply = response.text().trim();
 
         if (!aiReply) {
