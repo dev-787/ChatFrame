@@ -65,6 +65,16 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("combined"));
 }
 
+// ─── Root route ───────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "ChatFrame API is running 🚀",
+    version: "1.0.0",
+    docs: "/api/health",
+  });
+});
+
 // ─── Routes ──────────────────────────────────────────────────────
 app.use("/api", routes);
 
