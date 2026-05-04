@@ -6,6 +6,11 @@
 import { io } from 'socket.io-client';
 import apiService from './api';
 
+// Derive socket URL from the API base — strips /api suffix
+// Works for both local (http://localhost:5000/api) and production
+const SOCKET_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api')
+  .replace(/\/api$/, '');
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -21,7 +26,7 @@ class SocketService {
       return;
     }
 
-    this.socket = io('http://localhost:5000', {
+    this.socket = io(SOCKET_URL, {
       auth: {
         token: token
       },
