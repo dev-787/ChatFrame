@@ -56,7 +56,7 @@ const Pricing = () => {
   const [yearly, setYearly] = useState(false);
 
   return (
-    <section className="pricing">
+    <section className="pricing" id="pricing">
 
       <div className="pricing__capsule-wrap">
         <span className="pricing__capsule">Pricing</span>

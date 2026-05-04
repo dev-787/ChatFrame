@@ -28,8 +28,9 @@ const Footer = () => {
         {/* Navigation links */}
         <nav className="footer__nav">
           <a href="/" className="footer__nav-link">Home</a>
-          <a href="#features" className="footer__nav-link">Features</a>
+          <a href="#how-it-works" className="footer__nav-link">How it Works</a>
           <a href="#pricing" className="footer__nav-link">Pricing</a>
+          <a href="#faq" className="footer__nav-link">FAQ</a>
           <a href="#support" className="footer__nav-link">Support</a>
           <a href="/signup" className="footer__nav-link footer__nav-link--cta">Get Started</a>
         </nav>

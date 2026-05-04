@@ -85,9 +85,9 @@ const Navbar = () => {
 
       {/* Nav Links */}
       <ul className="navbar__links">
-        <li><a href="#">Features</a></li>
-        <li><a href="#">Pricing</a></li>
-        <li><a href="#">Docs</a></li>
+        <li><a href="#how-it-works">How it Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
       </ul>
 
       {/* Auth-aware Actions */}

@@ -37,7 +37,7 @@ const STEPS = [
 ];
 
 const HowItWorks = () => (
-  <section className="hiw">
+  <section className="hiw" id="how-it-works">
     <div className="hiw__label-top">
       <span>How it works</span>
     </div>
