@@ -307,6 +307,8 @@ router.post("/message", asyncHandler(async (req, res) => {
   let aiResponse = null;
   
   // Generate AI response if enabled and appropriate
+  console.log('🔍 AI Check - isAIEnabled:', aiService.isAIEnabled(), 'isOnline:', config.isOnline);
+  
   if (aiService.isAIEnabled() && config.isOnline) {
     try {
       // Get conversation history for context
@@ -318,8 +320,11 @@ router.post("/message", asyncHandler(async (req, res) => {
       .limit(10)
       .lean();
 
+      console.log('📜 Conversation history length:', conversationHistory.length);
+
       // Check if AI should respond
       const shouldRespond = await aiService.shouldAutoReply(message, conversationHistory);
+      console.log('🤔 Should AI respond?', shouldRespond);
       
       if (shouldRespond) {
         console.log('🤖 Generating AI response for ticket:', ticket._id);
@@ -329,6 +334,8 @@ router.post("/message", asyncHandler(async (req, res) => {
           conversationHistory,
           { companyName: config.companyName || 'ChatFrame' }
         );
+
+        console.log('📊 AI Result:', aiResult ? `confidence=${aiResult.confidence}, shouldAutoReply=${aiResult.shouldAutoReply}` : 'null');
 
         if (aiResult && aiResult.shouldAutoReply) {
           // Create AI response message
@@ -343,8 +350,10 @@ router.post("/message", asyncHandler(async (req, res) => {
 
           aiResponse = aiResult.response;
           console.log('✅ AI response generated with confidence:', aiResult.confidence);
+        } else if (aiResult) {
+          console.log('🤖 AI confidence too low (' + aiResult.confidence + '), no auto-reply');
         } else {
-          console.log('🤖 AI confidence too low, no auto-reply');
+          console.log('🤖 AI returned null - check API key or model availability');
         }
       } else {
         console.log('🤖 AI auto-reply not appropriate for this conversation');
@@ -353,6 +362,8 @@ router.post("/message", asyncHandler(async (req, res) => {
       console.error('❌ AI response generation failed:', error);
       // Continue without AI response - don't fail the entire request
     }
+  } else {
+    console.log('⚠️  AI disabled or widget offline - skipping AI response');
   }
   
   // Fallback offline message if no AI response and widget is offline
