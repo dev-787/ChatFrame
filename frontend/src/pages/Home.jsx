@@ -6,7 +6,7 @@ import FAQ from '../components/FAQ';
 import Footer from '../components/Footer';
 import './Home.scss';
 import Pricing from '../components/Pricing';
-import { Support } from '../components/support';
+import { Support } from '../components/Support';
 
 const Home = () => {
   return (
