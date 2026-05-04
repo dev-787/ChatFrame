@@ -12,11 +12,18 @@ const { sendSuccess, sendError } = require("../utils/apiResponse");
 router.get("/widget.js", (req, res) => {
   res.setHeader("Content-Type", "application/javascript");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-cache"); // Don't cache during development
-  
-  const API_BASE = process.env.NODE_ENV === 'production' 
-    ? 'https://api.chatframe.io/api' 
-    : 'http://localhost:5000/api';
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+
+  // Use explicit BACKEND_URL env var in production (most reliable).
+  // Fall back to deriving from the request for local dev.
+  let API_BASE;
+  if (process.env.BACKEND_URL) {
+    API_BASE = `${process.env.BACKEND_URL}/api`;
+  } else {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    API_BASE = `${protocol}://${host}/api`;
+  }
 
   const widgetScript = `(function() {
   'use strict';

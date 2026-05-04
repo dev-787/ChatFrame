@@ -1,53 +1,30 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { validateCompanyIdentityForm, parseBackendErrors } from "../../../../utils/validation";
 
-const UploadIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-    <path d="M11 14V4M7 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 17h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-);
-
 const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loading, fieldErrors }) => {
-  const [logoPreview, setLogoPreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const fileRef = useRef();
 
   const f = formData;
   const set = (key) => (e) => {
     updateForm({ [key]: e.target.value });
     setTouched(prev => ({ ...prev, [key]: true }));
     
-    // Clear errors for this field when user starts typing
     if (errors[key] || fieldErrors[key]) {
       setErrors(prev => ({ ...prev, [key]: null }));
     }
   };
 
-  // Real-time validation
   useEffect(() => {
     const validation = validateCompanyIdentityForm(f);
     const newErrors = {};
-    
-    // Only show errors for touched fields
     Object.keys(validation.errors).forEach(key => {
       if (touched[key]) {
         newErrors[key] = validation.errors[key];
       }
     });
-    
     setErrors(newErrors);
   }, [f, touched]);
-
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    updateForm({ companyLogo: file });
-    const reader = new FileReader();
-    reader.onload = (ev) => setLogoPreview(ev.target.result);
-    reader.readAsDataURL(file);
-  };
 
   const handleBlur = (fieldName) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }));
@@ -70,7 +47,6 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loadi
     }
   };
 
-  // Merge local validation errors with API field errors
   const allErrors = { ...errors, ...parseBackendErrors(fieldErrors) };
   
   const getFieldState = (fieldName) => {
@@ -81,26 +57,6 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loadi
 
   return (
     <div className="company-identity">
-      {/* Logo upload */}
-      <div className="logo-upload" onClick={() => fileRef.current.click()}>
-        {logoPreview ? (
-          <img src={logoPreview} alt="Logo preview" className="logo-upload__preview" />
-        ) : (
-          <>
-            <UploadIcon />
-            <span>Upload company logo</span>
-            <small>PNG, JPG, SVG — optional</small>
-          </>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handleFile}
-        />
-      </div>
-
       <div className={`ob-field ob-field--${getFieldState('companyName')}`}>
         <label>Company name</label>
         <input

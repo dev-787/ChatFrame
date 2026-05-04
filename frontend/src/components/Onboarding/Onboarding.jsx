@@ -209,7 +209,6 @@ const Onboarding = () => {
         sessionId,
         companyName: data.companyName,
         companyWebsite: data.companyWebsite,
-        companyLogo: data.companyLogo
       };
 
       const response = await apiService.companyOnboardingStep2(payload);

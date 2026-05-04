@@ -12,15 +12,16 @@
     <!-- ChatFrame Widget -->
 <script>
   window.ChatFrameConfig = {
-    widgetKey: "cfwk_dadc418931b4433abf62",
-    primaryColor: "#96f264",
-    position: "bottom-left"
+    widgetKey: "cfwk_8575610b041b43b79721",
+    primaryColor: "#6366f1",
+    position: "bottom-right"
   };
   (function(d,s,id){
     var js,fjs=d.getElementsByTagName(s)[0];
     if(d.getElementById(id))return;
     js=d.createElement(s);js.id=id;
-    js.src=(window.location.hostname==="localhost"?"http://localhost:5000":"")+"/api/widget/widget.js";
+    var base=window.location.hostname==="localhost"?"http://localhost:5000":"https://chatframe-backend.onrender.com";
+    js.src=base+"/api/widget/widget.js";
     fjs.parentNode.insertBefore(js,fjs);
   }(document,'script','chatframe-sdk'));
 </script>

@@ -24,8 +24,15 @@
   const MAX_POLL_FAILS = 5;
   const POLL_INTERVAL_MS = 3000;
   
-  // API base URL
-  const API_BASE = 'http://localhost:5000/api';
+  // API base URL — derived from where this script was loaded so it works
+  // in both local dev (localhost:5000) and production automatically.
+  const scriptEl = document.getElementById('chatframe-sdk') ||
+    Array.from(document.querySelectorAll('script[src]'))
+      .find(s => s.src.includes('chatframe-widget') || s.src.includes('widget.js'));
+
+  const API_BASE = scriptEl
+    ? scriptEl.src.replace(/\/api\/widget\/.*$/, '/api')
+    : 'http://localhost:5000/api';
   
   // Create widget HTML
   function createWidget() {
