@@ -30,7 +30,12 @@ class SocketService {
       auth: {
         token: token
       },
-      autoConnect: true
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
     });
 
     this.setupEventListeners();
