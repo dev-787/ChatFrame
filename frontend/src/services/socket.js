@@ -6,10 +6,17 @@
 import { io } from 'socket.io-client';
 import apiService from './api';
 
-// Derive socket URL from the API base — strips /api suffix
-// Works for both local (http://localhost:5000/api) and production
-const SOCKET_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api')
-  .replace(/\/api$/, '');
+// Derive socket URL — extract just the origin (protocol + host, no path)
+// e.g. https://chatframe-y2j7.onrender.com/api → https://chatframe-y2j7.onrender.com
+const _apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const SOCKET_URL = (() => {
+  try {
+    const u = new URL(_apiBase);
+    return u.origin; // always just protocol + host, no path
+  } catch {
+    return 'http://localhost:5000';
+  }
+})();
 
 class SocketService {
   constructor() {
