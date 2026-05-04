@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./hero.scss";
 import heroBaseLayer from "../assets/hero-base-layer.svg";
 import heroAgent from "../assets/hero-agent.png";
@@ -71,6 +72,21 @@ const STATS = [
 ];
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleStartFree = (e) => {
+    e.preventDefault();
+    navigate('/onboarding');
+  };
+
+  const handleSeeHowItWorks = (e) => {
+    e.preventDefault();
+    // Open the ChatFrame widget
+    if (window.ChatFrame) {
+      window.ChatFrame.open();
+    }
+  };
+
   return (
     <section className="hero">
       <div className="hero__left">
@@ -90,14 +106,14 @@ const Hero = () => {
           </p>
 
           <div className="hero__ctas">
-            <a href="#" className="hero__cta hero__cta--primary">
+            <a href="#" className="hero__cta hero__cta--primary" onClick={handleStartFree}>
               Start for free
               <span className="hero__cta-arrow">
                 <span className="hero__cta-arrow-default"><ArrowIcon /></span>
                 <span className="hero__cta-arrow-hover"><ArrowIcon /></span>
               </span>
             </a>
-            <a href="#" className="hero__cta hero__cta--secondary">
+            <a href="#" className="hero__cta hero__cta--secondary" onClick={handleSeeHowItWorks}>
               See how it works
               <PlayIcon />
             </a>
