@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { MessageSquare, Mail, Phone } from 'lucide-react';
-import './support.scss';
+import './Support.scss';
 import { SectionPill } from './SectionPill';
 
 const CARDS = [
