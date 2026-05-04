@@ -38,7 +38,7 @@ const updateWidgetConfig = async (tenantId, updates) => {
 const generateEmbedScript = (widgetKey, config) => {
   const baseUrl = process.env.BACKEND_URL ||
     (process.env.NODE_ENV === 'production'
-      ? 'https://chatframe-backend.onrender.com'  // update to your real backend URL
+      ? 'https://chatframe-y2j7.onrender.com'
       : 'http://localhost:5000');
     
   return `<!-- ChatFrame Widget -->
