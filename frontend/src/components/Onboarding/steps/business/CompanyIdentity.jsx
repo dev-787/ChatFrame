@@ -69,17 +69,19 @@ const CompanyIdentity = ({ formData, updateForm, onNext, onBack, onSubmit, loadi
         {allErrors.companyName && <span className="ob-field__error">{allErrors.companyName}</span>}
       </div>
 
-      <div className="ob-field">
+      <div className={`ob-field ob-field--${getFieldState('companyWebsite')}`}>
         <label>
           Company website
           <span className="ob-field__optional">optional</span>
         </label>
         <input
-          type="url"
+          type="text"
           placeholder="https://acme.com"
           value={f.companyWebsite || ""}
           onChange={set("companyWebsite")}
+          onBlur={() => handleBlur('companyWebsite')}
         />
+        {allErrors.companyWebsite && <span className="ob-field__error">{allErrors.companyWebsite}</span>}
       </div>
 
       <div className="ob-actions">

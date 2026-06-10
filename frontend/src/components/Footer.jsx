@@ -69,7 +69,7 @@ const Footer = () => {
       {/* Bottom branding */}
       <div className="footer__bottom">
         <p className="footer__copyright">
-          © 2024 ChatFrame. All rights reserved.
+          © 2026 ChatFrame. All rights reserved.
         </p>
       </div>
     </footer>

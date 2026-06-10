@@ -40,6 +40,14 @@ function SupportCard({ card }) {
   const [active, setActive] = useState(false);
   const Icon = card.icon;
 
+  const handleStartChat = () => {
+    const button = document.getElementById('chatframe-button');
+    const windowEl = document.getElementById('chatframe-window');
+    if (windowEl && windowEl.classList.contains('cf-hidden')) {
+      button?.click();
+    }
+  };
+
   return (
     <div
       className={`sp-card-stack ${active ? 'sp-active' : ''}`}
@@ -83,7 +91,7 @@ function SupportCard({ card }) {
         {card.href ? (
           <a href={card.href} className="sp-card-btn">{card.btn}</a>
         ) : (
-          <button className="sp-card-btn">{card.btn}</button>
+          <button className="sp-card-btn" onClick={handleStartChat}>{card.btn}</button>
         )}
       </div>
     </div>

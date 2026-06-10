@@ -92,9 +92,10 @@ const Dashboard = () => {
         return <Tickets onNavigateToInbox={handleNavigateToInbox} />;
       case 'inbox':
         return <Inbox initialCustomerId={inboxCustomerId} />;
-      default:
+      default: {
         const PageComponent = PAGES[activePage] || DashboardHome;
         return <PageComponent />;
+      }
     }
   };
 
@@ -110,6 +111,7 @@ const Dashboard = () => {
       <div className="db__main">
         <DashboardNav
           activePage={activePage}
+          setActivePage={handlePageChange}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />

@@ -97,7 +97,19 @@ export const validateWebsite = (website) => {
   }
   
   try {
-    const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+    const hasHttp = website.startsWith('http://') || website.startsWith('https://');
+    const urlString = hasHttp ? website : `https://${website}`;
+    const url = new URL(urlString);
+    
+    // Check if the hostname has a dot (e.g. acme.com, not just 'dev' or 'localhost')
+    const hostname = url.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const hasDot = hostname.includes('.');
+    
+    if (!isLocalhost && !hasDot) {
+      return { isValid: false, errors: ['Company website must be a valid URL'] };
+    }
+    
     return { isValid: true, errors: [] };
   } catch {
     return { isValid: false, errors: ['Company website must be a valid URL'] };
