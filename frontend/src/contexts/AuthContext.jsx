@@ -41,8 +41,11 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      // Token is invalid or network error, clear auth
-      apiService.clearAuth();
+      // Only clear auth on explicit 401 Unauthorized status.
+      // Retain the session on network or connection errors (status 0).
+      if (error && error.status === 401) {
+        apiService.clearAuth();
+      }
       console.warn('Auth initialization failed:', error.message);
     } finally {
       setLoading(false);

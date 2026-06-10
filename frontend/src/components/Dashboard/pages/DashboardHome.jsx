@@ -28,6 +28,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const DashboardHome = () => {
   const { getFullName } = useAuth();
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +125,7 @@ const DashboardHome = () => {
   return (
   <div className="db-page dash-home">
     <div className="db-page__header">
-      <h1 className="db-page__title">Good morning, {getFullName() || 'there'} 👋</h1>
+      <h1 className="db-page__title">{getGreeting()}, {getFullName() || 'there'}</h1>
       <p className="db-page__sub">Here's what's happening with your support system today.</p>
     </div>
 
