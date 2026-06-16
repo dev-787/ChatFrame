@@ -2,27 +2,167 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChatFrame - Agentic Customer Support Platform</title>
+
+    <!-- ═══════════════════════════════════════════════════
+         PRIMARY SEO TAGS
+    ═══════════════════════════════════════════════════ -->
+    <title>ChatFrame — AI-Powered Customer Support Platform</title>
+    <meta name="description" content="ChatFrame is an agentic AI customer support platform. Automate tickets, deploy a smart chat widget, and let AI handle repetitive queries while your team focuses on complex issues. Start free today." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="keywords" content="AI customer support, agentic customer support platform, AI chat widget, automated helpdesk, customer support automation, AI ticketing system, support AI software" />
+    <meta name="author" content="ChatFrame" />
+    <link rel="canonical" href="https://chatframe.com/" />
+
+    <!-- ═══════════════════════════════════════════════════
+         OPEN GRAPH (Facebook, LinkedIn, Slack, etc.)
+    ═══════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ChatFrame" />
+    <meta property="og:title" content="ChatFrame — AI-Powered Customer Support Platform" />
+    <meta property="og:description" content="Automate customer support with AI. ChatFrame resolves tickets 10x faster, achieves 98% CSAT, and integrates with 40+ tools. Start free." />
+    <meta property="og:url" content="https://chatframe.com/" />
+    <meta property="og:image" content="https://chatframe.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ChatFrame — AI-Powered Customer Support Platform" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ═══════════════════════════════════════════════════
+         TWITTER CARD
+    ═══════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@chatframe" />
+    <meta name="twitter:creator" content="@chatframe" />
+    <meta name="twitter:title" content="ChatFrame — AI-Powered Customer Support Platform" />
+    <meta name="twitter:description" content="Automate customer support with AI. ChatFrame resolves tickets 10x faster, achieves 98% CSAT, and integrates with 40+ tools. Start free." />
+    <meta name="twitter:image" content="https://chatframe.com/og-image.png" />
+    <meta name="twitter:image:alt" content="ChatFrame — AI-Powered Customer Support Platform" />
+
+    <!-- ═══════════════════════════════════════════════════
+         PWA / MOBILE
+    ═══════════════════════════════════════════════════ -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ChatFrame" />
+
+    <!-- ═══════════════════════════════════════════════════
+         FAVICON & ICONS
+    ═══════════════════════════════════════════════════ -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- ═══════════════════════════════════════════════════
+         PERFORMANCE — PRECONNECTS
+    ═══════════════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- ═══════════════════════════════════════════════════
+         STRUCTURED DATA — Organization
+    ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ChatFrame",
+      "url": "https://chatframe.com",
+      "logo": "https://chatframe.com/favicon.svg",
+      "description": "ChatFrame is an AI-powered agentic customer support platform that combines intelligent automation with real human support.",
+      "foundingDate": "2024",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@chatframe.com",
+        "availableLanguage": "English"
+      },
+      "sameAs": [
+        "https://twitter.com/chatframe",
+        "https://linkedin.com/company/chatframe"
+      ]
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════
+         STRUCTURED DATA — SoftwareApplication
+    ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "ChatFrame",
+      "url": "https://chatframe.com",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Customer Support Software",
+      "operatingSystem": "Web",
+      "description": "AI-powered customer support platform. Automate tickets, deploy a smart chat widget, and let AI resolve repetitive queries with human escalation for complex issues.",
+      "featureList": [
+        "AI-powered ticket resolution",
+        "Embeddable chat widget",
+        "Real-time inbox with live updates",
+        "CSAT analytics dashboard",
+        "Custom AI training with your FAQs",
+        "Human escalation for complex queries",
+        "Role-based access control",
+        "40+ integrations"
+      ],
+      "screenshot": "https://chatframe.com/og-image.png",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Starter",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "500 AI responses/month, 1 workspace, basic analytics"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "29",
+          "priceCurrency": "USD",
+          "description": "Unlimited AI responses, 5 workspaces, advanced analytics, custom AI training"
+        },
+        {
+          "@type": "Offer",
+          "name": "Enterprise",
+          "price": "99",
+          "priceCurrency": "USD",
+          "description": "Everything in Pro, unlimited workspaces, dedicated account manager, SLA guarantee"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "128",
+        "bestRating": "5"
+      }
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════
+         STRUCTURED DATA — WebSite (Sitelinks search box)
+    ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "ChatFrame",
+      "url": "https://chatframe.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://chatframe.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <!-- ChatFrame Widget -->
-<script>
-  window.ChatFrameConfig = {
-    widgetKey: "cfwk_8575610b041b43b79721",
-    primaryColor: "#6366f1",
-    position: "bottom-left"
-  };
-  (function(d,s,id){
-    var js,fjs=d.getElementsByTagName(s)[0];
-    if(d.getElementById(id))return;
-    js=d.createElement(s);js.id=id;
-    js.src="http://localhost:5000/api/widget/widget.js";
-    fjs.parentNode.insertBefore(js,fjs);
-  }(document,'script','chatframe-sdk'));
-</script>
   </body>
 </html>

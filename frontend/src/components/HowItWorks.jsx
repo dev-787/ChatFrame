@@ -61,6 +61,10 @@ const HowItWorks = () => (
               alt={step.imgAlt}
               className="hiw__img"
               draggable="false"
+              loading="lazy"
+              decoding="async"
+              width="600"
+              height="400"
             />
           </div>
           <div className="hiw__content">

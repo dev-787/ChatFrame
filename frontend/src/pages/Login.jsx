@@ -8,6 +8,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
 import Logo from '../components/Logo/Logo';
+import SEOHead from '../components/SEOHead/SEOHead';
 import '../components/Onboarding/Onboarding.scss';
 
 const Login = () => {
@@ -75,6 +76,12 @@ const Login = () => {
 
   return (
     <div className="onboarding">
+      <SEOHead
+        title="Sign In — ChatFrame"
+        description="Sign in to your ChatFrame account to manage AI customer support, tickets, and your support team workspace."
+        canonical="https://chatframe.com/login"
+        noindex={true}
+      />
       {/* Background effects */}
       <div className="onboarding__bg">
         <div className="onboarding__bg-glow onboarding__bg-glow--1" />

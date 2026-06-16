@@ -137,15 +137,20 @@ const Hero = () => {
       <div className="hero__right">
         <img
           src={heroBaseLayer}
-          alt=""
+          alt="ChatFrame AI customer support dashboard interface"
           className="hero__visual"
-          aria-hidden="true"
+          loading="eager"
+          fetchPriority="high"
+          width="720"
+          height="480"
         />
         <img
           src={heroAgent}
-          alt=""
+          alt="AI support agent handling customer queries automatically"
           className="hero__agent"
-          aria-hidden="true"
+          loading="eager"
+          width="320"
+          height="320"
         />
       </div>
     </section>

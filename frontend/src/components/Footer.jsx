@@ -3,7 +3,7 @@ import agentWork from '../assets/agent-work.png';
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <footer className="footer" aria-label="Site footer" role="contentinfo">
       
       {/* Background agent image */}
       <div className="footer__bg-image">
@@ -26,7 +26,7 @@ const Footer = () => {
         </div>
 
         {/* Navigation links */}
-        <nav className="footer__nav">
+        <nav className="footer__nav" aria-label="Footer navigation">
           <a href="/" className="footer__nav-link">Home</a>
           <a href="#how-it-works" className="footer__nav-link">How it Works</a>
           <a href="#pricing" className="footer__nav-link">Pricing</a>
@@ -39,6 +39,9 @@ const Footer = () => {
         <div className="footer__legal">
           <a href="/terms" className="footer__legal-link">Terms & Conditions</a>
           <a href="/privacy" className="footer__legal-link">Privacy Policy</a>
+          <address className="footer__address">
+            <a href="mailto:support@chatframe.com" className="footer__legal-link">support@chatframe.com</a>
+          </address>
           
           {/* Social icons */}
           <div className="footer__social">

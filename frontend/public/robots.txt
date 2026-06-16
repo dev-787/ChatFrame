@@ -1,0 +1,27 @@
+# robots.txt — ChatFrame
+# https://chatframe.com/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /sitemap.xml
+
+# Block private/auth routes from indexing
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /onboarding
+Disallow: /onboarding/
+Disallow: /login
+Disallow: /signup
+Disallow: /workspace
+
+# Block common bot traps and utility paths
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /src/
+
+# Sitemap location
+Sitemap: https://chatframe.com/sitemap.xml
+
+# Crawl rate hint for well-behaved bots
+Crawl-delay: 1
