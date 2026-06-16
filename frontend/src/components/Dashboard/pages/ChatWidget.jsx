@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './ChatWidget.scss';
 import apiService from '../../../services/api';
+import ColorPicker from '../../ColorPicker/ColorPicker';
 
 const ChatWidget = () => {
   const [config, setConfig] = useState({
@@ -81,15 +82,10 @@ const ChatWidget = () => {
             
             <div className="chatwidget__field">
               <label>Primary Color</label>
-              <div className="chatwidget__color-input">
-                <input 
-                  type="color" 
-                  value={config.primaryColor} 
-                  onChange={e => handleConfigChange('primaryColor', e.target.value)}
-                  className="chatwidget__color" 
-                />
-                <span className="chatwidget__color-value">{config.primaryColor}</span>
-              </div>
+              <ColorPicker 
+                value={config.primaryColor} 
+                onChange={val => handleConfigChange('primaryColor', val)} 
+              />
             </div>
 
             <div className="chatwidget__field">

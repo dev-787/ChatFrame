@@ -1,0 +1,64 @@
+.custom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  height: 24px;
+  border-radius: 9999px;
+  font-family: var(--font, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+  background: #18181b; // Sleek dark gray capsule background matching the screenshot
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  // Icon styles inside chip
+  svg, .chip-dot {
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &__label {
+    white-space: nowrap;
+  }
+
+  // Color modifiers
+  &--default, &--info {
+    color: #e2e8f0; // Off-white/slate text
+  }
+
+  &--success {
+    color: #4ade80; // Emerald green text
+    background: rgba(74, 222, 128, 0.06);
+    border-color: rgba(74, 222, 128, 0.1);
+  }
+
+  &--warning {
+    color: #fbbf24; // Amber yellow text
+    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(251, 191, 36, 0.1);
+  }
+
+  &--danger {
+    color: #f87171; // Rose red text
+    background: rgba(248, 113, 113, 0.06);
+    border-color: rgba(248, 113, 113, 0.1);
+  }
+
+  &--accent {
+    color: #60a5fa; // Sky blue text
+    background: rgba(96, 165, 250, 0.06);
+    border-color: rgba(96, 165, 250, 0.1);
+  }
+}

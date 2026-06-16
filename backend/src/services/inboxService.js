@@ -5,13 +5,20 @@ const AppError = require("../utils/AppError");
 /**
  * Get conversation list (open + in_progress tickets with last message).
  */
-const getConversations = async (tenantId, query = {}) => {
+const getConversations = async (tenantId, query = {}, user = null) => {
   const { status = "open,in_progress", page = 1, limit = 30 } = query;
 
   const statuses = status.split(",").map((s) => s.trim());
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const tickets = await Ticket.find({ tenantId, status: { $in: statuses } })
+  const filter = { tenantId, status: { $in: statuses } };
+
+  // If user is a support agent, restrict conversations to those assigned to them
+  if (user && user.role === "support_agent") {
+    filter.assignedTo = user._id;
+  }
+
+  const tickets = await Ticket.find(filter)
     .populate("assignedTo", "firstName lastName")
     .sort({ updatedAt: -1 })
     .skip(skip)
@@ -53,11 +60,20 @@ const getConversations = async (tenantId, query = {}) => {
 /**
  * Get all messages for a ticket (conversation thread).
  */
-const getMessages = async (tenantId, ticketId) => {
+const getMessages = async (tenantId, ticketId, user = null) => {
   // Verify ticket belongs to tenant
   const ticket = await Ticket.findOne({ _id: ticketId, tenantId })
-    .populate("assignedTo", "firstName lastName");
+    .populate("assignedTo", "firstName lastName email role");
   if (!ticket) throw new AppError("Conversation not found.", 404);
+
+  // Access control:
+  // Support agent cannot view a conversation assigned to a different agent.
+  if (user && user.role === "support_agent") {
+    const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+    if (assignedUserId && String(assignedUserId) !== String(user._id)) {
+      throw new AppError("Access denied. This ticket is assigned to another agent.", 403);
+    }
+  }
 
   const messages = await Message.find({ tenantId, ticketId })
     .populate("senderId", "firstName lastName role")

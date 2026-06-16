@@ -25,14 +25,14 @@ class AIService {
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({
-        model: 'gemini-flash-latest',
+        model: 'gemini-flash-lite-latest',
         generationConfig: {
           maxOutputTokens: 1000,
           temperature: 0.7,
           topP: 0.95,
         },
       });
-      console.log('✅ Gemini AI initialized (gemini-flash-latest)');
+      console.log('✅ Gemini AI initialized (gemini-flash-lite-latest)');
     } catch (error) {
       console.error('❌ Failed to initialize Gemini AI:', error.message);
       this.isEnabled = false;
@@ -117,6 +117,13 @@ class AIService {
   // ── Private helpers ──────────────────────────────────────────────────────────
 
   _buildSystemPrompt(companyContext = {}) {
+    if (companyContext.systemPrompt) {
+      const toneString = companyContext.responseTone
+        ? `\nYour response tone should be: ${companyContext.responseTone}.`
+        : '';
+      return `${companyContext.systemPrompt}${toneString}`;
+    }
+
     const companyName = companyContext.companyName || 'our company';
     const industry = companyContext.industry || '';
     const extraContext = companyContext.additionalContext
@@ -170,6 +177,39 @@ Rules:
     if (customerMessage.trim().length < 10) confidence -= 0.2;
 
     return Math.max(0.1, Math.min(0.95, confidence));
+  }
+
+  /**
+   * Generate a summary of the conversation context.
+   */
+  async generateSummary(conversationHistory = []) {
+    if (!this.isAIEnabled()) return null;
+
+    const lines = conversationHistory
+      .slice(-10) // Limit to last 10 messages for summary context
+      .map(msg => {
+        const role =
+          msg.senderType === 'customer' ? 'Customer' :
+          msg.senderType === 'ai'       ? 'AI Assistant' : 'Agent';
+        return `${role}: ${msg.content}`;
+      });
+
+    const conversationContext = lines.join('\n');
+    const prompt = `Please review the following customer support chat history and provide a concise, one-sentence or two-sentence summary of the customer's issue and current status. Be helpful, professional, and do not include conversational fluff.
+
+${conversationContext}
+
+Summary:`;
+
+    try {
+      console.log('🤖 Generating chat summary...');
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (error) {
+      console.error('❌ Failed to generate chat summary:', error.message);
+      return null;
+    }
   }
 
   _isRetryableError(error) {

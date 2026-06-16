@@ -5,7 +5,10 @@ const WidgetConfig = require("../models/WidgetConfig");
 const { Ticket } = require("../models/Ticket");
 const Message = require("../models/Message");
 const aiService = require("../services/aiService");
+const AIConfig = require("../models/AIConfig");
+const ticketService = require("../services/ticketService");
 const asyncHandler = require("../utils/asyncHandler");
+const { Notification } = require("../models/Notification");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
 
 // Serve the widget JavaScript file
@@ -39,7 +42,8 @@ router.get("/widget.js", (req, res) => {
   var lastMessageCount = 0;
   var pollFailCount = 0;
   var MAX_POLL_FAILS = 5;
-  var API_BASE = '${API_BASE}';
+  var currentScript = document.currentScript || document.getElementById('chatframe-sdk');
+  var API_BASE = (currentScript && currentScript.src) ? currentScript.src.replace('/widget/widget.js', '') : '${API_BASE}';
 
   function createWidget() {
     var widget = document.createElement('div');
@@ -304,66 +308,199 @@ router.post("/message", asyncHandler(async (req, res) => {
     senderType: 'customer'
   });
 
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`tenant:${config.tenantId}`).emit("message:new", {
+      ticketId: ticket._id,
+      message: customerMessage
+    });
+  }
+
   let aiResponse = null;
-  
-  // Generate AI response if enabled and appropriate
-  console.log('🔍 AI Check - isAIEnabled:', aiService.isAIEnabled(), 'isOnline:', config.isOnline);
-  
-  if (aiService.isAIEnabled() && config.isOnline) {
-    try {
-      // Get conversation history for context
-      const conversationHistory = await Message.find({ 
-        tenantId: config.tenantId, 
-        ticketId: ticket._id 
-      })
-      .sort({ createdAt: 1 })
-      .limit(10)
-      .lean();
 
-      console.log('📜 Conversation history length:', conversationHistory.length);
+  // Retrieve or seed AIConfig
+  let aiConfig = await AIConfig.findOne({ tenantId: config.tenantId });
+  if (!aiConfig) {
+    aiConfig = await AIConfig.create({ tenantId: config.tenantId });
+  }
 
-      // Check if AI should respond
-      const shouldRespond = await aiService.shouldAutoReply(message, conversationHistory);
-      console.log('🤔 Should AI respond?', shouldRespond);
-      
-      if (shouldRespond) {
-        console.log('🤖 Generating AI response for ticket:', ticket._id);
+  const isGlobalAIEnabled = aiService.isAIEnabled();
+  const isTenantAIEnabled = aiConfig.isEnabled;
+  const aiEnabled = isGlobalAIEnabled && isTenantAIEnabled;
+
+  const messageTextLower = message.toLowerCase();
+  const hasEscalationKeyword = aiConfig.escalationKeywords && aiConfig.escalationKeywords.some(keyword =>
+    keyword && messageTextLower.includes(keyword.toLowerCase())
+  );
+
+  const aiRepliesCount = await Message.countDocuments({
+    ticketId: ticket._id,
+    senderType: 'ai',
+    isAiGenerated: true
+  });
+  const maxRepliesReached = aiRepliesCount >= (aiConfig.maxAiRepliesPerTicket || 5);
+
+  let shouldEscalate = false;
+  let escalationReason = null;
+  let lowConfidenceScore = null;
+
+  console.log('🔍 AI Check - isAIEnabled:', aiEnabled, 'isOnline:', config.isOnline);
+
+  if (config.isOnline) {
+    if (!aiEnabled) {
+      console.log('🤖 AI is disabled - checking direct escalation');
+      if (aiConfig.autoEscalation) {
+        shouldEscalate = true;
+        escalationReason = "ai_disabled";
+      }
+    } else if (hasEscalationKeyword) {
+      console.log('🤖 Escalation keyword detected in message');
+      if (aiConfig.autoEscalation) {
+        shouldEscalate = true;
+        escalationReason = "keyword_detected";
+      }
+    } else if (maxRepliesReached) {
+      console.log('🤖 Max AI replies reached for this ticket');
+      if (aiConfig.autoEscalation) {
+        shouldEscalate = true;
+        escalationReason = "max_replies_reached";
+      }
+    } else {
+      // Proceed with AI reply generation
+      try {
+        // Get conversation history for context
+        const conversationHistory = await Message.find({ 
+          tenantId: config.tenantId, 
+          ticketId: ticket._id 
+        })
+        .sort({ createdAt: 1 })
+        .limit(10)
+        .lean();
+
+        console.log('📜 Conversation history length:', conversationHistory.length);
+
+        // Check if AI should respond
+        const shouldRespond = await aiService.shouldAutoReply(message, conversationHistory);
+        console.log('🤔 Should AI respond?', shouldRespond);
+
+        if (shouldRespond) {
+          console.log('🤖 Generating AI response for ticket:', ticket._id);
+
+          const aiResult = await aiService.generateResponse(
+            message,
+            conversationHistory,
+            {
+              companyName: config.companyName || 'ChatFrame',
+              systemPrompt: aiConfig.systemPrompt,
+              responseTone: aiConfig.responseTone
+            }
+          );
+
+          console.log('📊 AI Result:', aiResult ? `confidence=${aiResult.confidence}, shouldAutoReply=${aiResult.shouldAutoReply}` : 'null');
+
+          if (aiResult) {
+            const tenantThreshold = aiConfig.confidenceThreshold !== undefined ? aiConfig.confidenceThreshold : 0.75;
+            const meetsThreshold = aiResult.confidence >= tenantThreshold;
+
+            if (meetsThreshold) {
+              // Create AI response message
+              const aiMessage = await Message.create({
+                tenantId: config.tenantId,
+                ticketId: ticket._id,
+                content: aiResult.response,
+                senderType: 'ai',
+                isAiGenerated: true,
+                aiConfidence: aiResult.confidence
+              });
+
+              aiResponse = aiResult.response;
+              console.log('✅ AI response generated with confidence:', aiResult.confidence);
+
+              if (io) {
+                io.to(`tenant:${config.tenantId}`).emit("message:new", {
+                  ticketId: ticket._id,
+                  message: aiMessage
+                });
+              }
+            } else {
+              console.log(`🤖 AI confidence (${aiResult.confidence}) below threshold (${tenantThreshold})`);
+              if (aiConfig.autoEscalation) {
+                shouldEscalate = true;
+                escalationReason = "low_confidence";
+                lowConfidenceScore = aiResult.confidence;
+              }
+            }
+          } else {
+            console.log('🤖 AI returned null - check API key or model availability');
+          }
+        } else {
+          console.log('🤖 AI auto-reply not appropriate for this conversation');
+        }
+      } catch (error) {
+        console.error('❌ AI response generation failed:', error);
+      }
+    }
+  }
+
+  // Handle escalation if triggered
+  if (shouldEscalate && ticket.status !== 'escalated') {
+    console.log(`⚠️ Escalating ticket ${ticket._id} due to ${escalationReason}`);
+    await ticketService.updateTicket(config.tenantId, ticket._id, { status: "escalated" }, null);
+
+    // If escalation reason is low_confidence, generate AI summary
+    if (escalationReason === "low_confidence") {
+      try {
+        const fullHistory = await Message.find({
+          tenantId: config.tenantId,
+          ticketId: ticket._id
+        })
+        .sort({ createdAt: 1 })
+        .lean();
+
+        console.log(`🤖 Generating low_confidence summary for ticket ${ticket._id}. History length: ${fullHistory.length}`);
         
-        const aiResult = await aiService.generateResponse(
-          message, 
-          conversationHistory,
-          { companyName: config.companyName || 'ChatFrame' }
-        );
-
-        console.log('📊 AI Result:', aiResult ? `confidence=${aiResult.confidence}, shouldAutoReply=${aiResult.shouldAutoReply}` : 'null');
-
-        if (aiResult && aiResult.shouldAutoReply) {
-          // Create AI response message
-          const aiMessage = await Message.create({
+        const summaryText = await aiService.generateSummary(fullHistory);
+        if (summaryText) {
+          const summaryMessage = await Message.create({
             tenantId: config.tenantId,
             ticketId: ticket._id,
-            content: aiResult.response,
+            content: summaryText,
             senderType: 'ai',
             isAiGenerated: true,
-            aiConfidence: aiResult.confidence
+            isSummary: true,
+            aiConfidence: lowConfidenceScore
           });
 
-          aiResponse = aiResult.response;
-          console.log('✅ AI response generated with confidence:', aiResult.confidence);
-        } else if (aiResult) {
-          console.log('🤖 AI confidence too low (' + aiResult.confidence + '), no auto-reply');
-        } else {
-          console.log('🤖 AI returned null - check API key or model availability');
+          console.log('✅ AI summary message created:', summaryMessage._id);
+
+          if (io) {
+            io.to(`tenant:${config.tenantId}`).emit("message:new", {
+              ticketId: ticket._id,
+              message: summaryMessage
+            });
+          }
         }
-      } else {
-        console.log('🤖 AI auto-reply not appropriate for this conversation');
+      } catch (sumErr) {
+        console.error('❌ Failed to generate or save chat summary on escalation:', sumErr);
       }
-    } catch (error) {
-      console.error('❌ AI response generation failed:', error);
-      // Continue without AI response - don't fail the entire request
     }
-  } else {
-    console.log('⚠️  AI disabled or widget offline - skipping AI response');
+
+    // Find the created ticket Notification and emit notification:new
+    try {
+      const notification = await Notification.findOne({
+        tenantId: config.tenantId,
+        "metadata.ticketId": ticket._id,
+        type: "ticket_escalated"
+      }).sort({ createdAt: -1 });
+
+      if (notification && io) {
+        console.log(`📡 Emitting ticket_escalated notification via socket:`, notification._id);
+        io.to(`tenant:${config.tenantId}`).emit("notification:new", notification);
+        io.to(`user:${notification.userId}`).emit("notification:new", notification);
+      }
+    } catch (notifErr) {
+      console.error('❌ Failed to find or emit notification:', notifErr);
+    }
   }
   
   // Fallback offline message if no AI response and widget is offline
@@ -371,13 +508,20 @@ router.post("/message", asyncHandler(async (req, res) => {
     aiResponse = config.offlineMessage;
     
     // Create offline auto-response message
-    await Message.create({
+    const offlineMessage = await Message.create({
       tenantId: config.tenantId,
       ticketId: ticket._id,
       content: aiResponse,
       senderType: 'ai',
       isAiGenerated: true
     });
+
+    if (io) {
+      io.to(`tenant:${config.tenantId}`).emit("message:new", {
+        ticketId: ticket._id,
+        message: offlineMessage
+      });
+    }
   }
   
   sendSuccess(res, { 
@@ -395,7 +539,7 @@ router.get("/messages/:ticketId", asyncHandler(async (req, res) => {
   }
   
   try {
-    const messages = await Message.find({ ticketId })
+    const messages = await Message.find({ ticketId, isSummary: { $ne: true } })
       .sort({ createdAt: 1 })
       .select('content senderType createdAt')
       .lean();

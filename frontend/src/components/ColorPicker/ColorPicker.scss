@@ -1,0 +1,181 @@
+.custom-color-picker {
+  position: relative;
+  display: inline-block;
+
+  &__swatch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &__swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%; // Match the second screenshot's circle color indicator
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+
+    .custom-color-picker__swatch-wrapper:hover & {
+      transform: scale(1.08);
+    }
+  }
+
+  &__value {
+    font-family: var(--font-mono, monospace);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-2, #b45309); // fallbacks
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  &__popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 999;
+    width: 240px;
+    padding: 12px;
+    background: #141416; // Premium dark gray
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.6);
+    transform-origin: top left;
+    animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &__area {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  &__gradient-saturation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+  }
+
+  &__gradient-value {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to top, #000, rgba(0, 0, 0, 0));
+  }
+
+  &__thumb {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: transform 0.1s ease;
+  }
+
+  &__slider-container {
+    margin-top: 12px;
+    position: relative;
+  }
+
+  &__hue-slider {
+    position: relative;
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+    cursor: pointer;
+  }
+
+  &__slider-thumb {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  &__inputs {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  &__input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+
+    label {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input {
+      width: 100%;
+      height: 34px;
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: #fff;
+      font-family: var(--font-mono, monospace);
+      font-size: 12px;
+      text-transform: uppercase;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+      }
+    }
+  }
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -60,12 +60,22 @@ const getTickets = async (tenantId, query = {}) => {
 /**
  * Get a single ticket by ID with messages.
  */
-const getTicketById = async (tenantId, ticketId) => {
+const getTicketById = async (tenantId, ticketId, user = null) => {
   const ticket = await Ticket.findOne({ _id: ticketId, tenantId })
     .populate("assignedTo", "firstName lastName email role")
     .populate("createdBy", "firstName lastName");
 
   if (!ticket) throw new AppError("Ticket not found.", 404);
+
+  // Access control:
+  // Support agent cannot view a ticket assigned to a different agent.
+  if (user && user.role === "support_agent") {
+    const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+    if (assignedUserId && String(assignedUserId) !== String(user._id)) {
+      throw new AppError("Access denied. This ticket is assigned to another agent.", 403);
+    }
+  }
+
   return ticket;
 };
 
@@ -98,6 +108,7 @@ const updateTicket = async (tenantId, ticketId, updates, actorId) => {
   if (!ticket) throw new AppError("Ticket not found.", 404);
 
   const prevStatus = ticket.status;
+  const prevAssignedTo = ticket.assignedTo ? String(ticket.assignedTo) : null;
 
   // Apply updates
   Object.assign(ticket, updates);
@@ -111,21 +122,33 @@ const updateTicket = async (tenantId, ticketId, updates, actorId) => {
   }
 
   await ticket.save();
+  await ticket.populate("assignedTo", "firstName lastName email role");
+  await ticket.populate("createdBy", "firstName lastName");
 
   // Emit notification on escalation
   if (updates.status === "escalated" && prevStatus !== "escalated") {
-    await Notification.create({
-      tenantId,
-      userId: ticket.assignedTo || actorId,
-      type: "ticket_escalated",
-      title: "Ticket Escalated",
-      message: `Ticket #${ticket.ticketNumber} has been escalated.`,
-      metadata: { ticketId: ticket._id, ticketNumber: ticket.ticketNumber },
-    });
+    let targetUserId = ticket.assignedTo?._id || ticket.assignedTo || actorId;
+    if (!targetUserId) {
+      const { User } = require("../models/User");
+      const adminUser = await User.findOne({ tenantId, role: "company_admin" });
+      if (adminUser) {
+        targetUserId = adminUser._id;
+      }
+    }
+    if (targetUserId) {
+      await Notification.create({
+        tenantId,
+        userId: targetUserId,
+        type: "ticket_escalated",
+        title: "Ticket Escalated",
+        message: `Ticket #${ticket.ticketNumber} has been escalated.`,
+        metadata: { ticketId: ticket._id, ticketNumber: ticket.ticketNumber },
+      });
+    }
   }
 
   // Notification on assignment
-  if (updates.assignedTo && updates.assignedTo !== String(ticket.assignedTo)) {
+  if (updates.assignedTo && String(updates.assignedTo) !== prevAssignedTo) {
     await Notification.create({
       tenantId,
       userId: updates.assignedTo,

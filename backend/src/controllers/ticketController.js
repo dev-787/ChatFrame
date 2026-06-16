@@ -15,7 +15,7 @@ const listTickets = asyncHandler(async (req, res) => {
 });
 
 const getTicket = asyncHandler(async (req, res) => {
-  const ticket = await getTicketById(req.user.tenantId, req.params.id);
+  const ticket = await getTicketById(req.user.tenantId, req.params.id, req.user);
   sendSuccess(res, { ticket }, "Ticket retrieved.");
 });
 

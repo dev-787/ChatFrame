@@ -105,6 +105,14 @@
     padding: 1px 5px; border-radius: 100px; flex-shrink: 0;
   }
 
+  &__convos {
+    flex: 1;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 3px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  }
+
   // ── Chat ──
   &__chat {
     display: flex;
@@ -383,4 +391,194 @@
   font-size: 12px;
   padding: 7px 12px;
   justify-content: center;
+}
+
+// Toast Notifications
+.inbox__toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10000;
+  max-width: 350px;
+  width: calc(100% - 48px);
+}
+
+.inbox__toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(10, 20, 38, 0.95);
+  border: 1px solid rgba(160, 255, 180, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(160, 255, 180, 0.3), inset 0 0 10px rgba(160, 255, 180, 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  animation: toast-fade-in 0.3s ease-out;
+  position: relative;
+}
+
+.inbox__toast-icon {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(160, 255, 180, 0.6);
+}
+
+.inbox__toast-content {
+  flex: 1;
+}
+
+.inbox__toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: 0 0 5px rgba(160, 255, 180, 0.4);
+  margin-bottom: 4px;
+}
+
+.inbox__toast-message {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.inbox__toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--green);
+  }
+}
+
+// Summary Messages
+.inbox__msg--summary {
+  align-self: center;
+  max-width: 90%;
+  width: 100%;
+  margin: 16px auto;
+  animation: summary-fade-in 0.5s ease-out;
+}
+
+.inbox__summary-card {
+  background: rgba(160, 255, 180, 0.04);
+  border: 1.5px dashed rgba(160, 255, 180, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(160, 255, 180, 0.1);
+  padding: 16px 20px;
+  color: #fff;
+}
+
+.inbox__summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(160, 255, 180, 0.2);
+}
+
+.inbox__summary-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  text-shadow: 0 0 5px rgba(160, 255, 180, 0.4);
+}
+
+.inbox__summary-confidence {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(160, 255, 180, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(160, 255, 180, 0.3);
+  padding: 2px 8px;
+  border-radius: 20px;
+  box-shadow: 0 0 5px rgba(160, 255, 180, 0.2);
+}
+
+.inbox__summary-body {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes summary-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// AI Copilot Sidebar Summary styles
+.inbox__copilot-summary-box {
+  padding: 12px;
+  background: rgba(160, 255, 180, 0.04);
+  border: 1px dashed rgba(160, 255, 180, 0.4);
+  border-radius: var(--radius, 8px);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2, rgba(255, 255, 255, 0.7));
+}
+
+.inbox__copilot-summary-text {
+  font-style: italic;
+  color: var(--text, #fff);
+}
+
+.inbox__copilot-summary-confidence {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: 0 0 5px rgba(160, 255, 180, 0.4);
+}
+
+.inbox__no-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+.inbox__empty-convos {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-3, rgba(255, 255, 255, 0.4));
+  font-size: 12.5px;
+  line-height: 1.5;
 }

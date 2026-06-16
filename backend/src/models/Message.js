@@ -38,6 +38,10 @@ const messageSchema = new mongoose.Schema(
       min: 0,
       max: 1,
     },
+    isSummary: {
+      type: Boolean,
+      default: false,
+    },
     isRead: {
       type: Boolean,
       default: false,

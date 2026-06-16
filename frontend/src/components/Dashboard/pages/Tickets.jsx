@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, CheckCircle2, Clock, XCircle, ChevronDown } from 'lucide-react';
 import './Tickets.scss';
+import Chip from '../../Chip/Chip';
 import apiService from '../../../services/api';
 import socketService from '../../../services/socket';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -8,11 +9,99 @@ import { useAuth } from '../../../contexts/AuthContext';
 const STATUS_COLOR = { open:'green', escalated:'red', resolved:'blue', closed:'ghost' };
 const PRI_COLOR    = { urgent:'red', high:'yellow', medium:'blue', low:'ghost' };
 
+const renderStatusChip = (status) => {
+  switch (status) {
+    case 'resolved':
+      return (
+        <Chip color="success">
+          <CheckCircle2 size={12} />
+          <Chip.Label>Completed</Chip.Label>
+        </Chip>
+      );
+    case 'in_progress':
+      return (
+        <Chip color="warning">
+          <Clock size={12} />
+          <Chip.Label>Pending</Chip.Label>
+        </Chip>
+      );
+    case 'open':
+      return (
+        <Chip color="default">
+          <span className="chip-dot" />
+          <Chip.Label>Open</Chip.Label>
+        </Chip>
+      );
+    case 'escalated':
+      return (
+        <Chip color="danger">
+          <XCircle size={12} />
+          <Chip.Label>Escalated</Chip.Label>
+        </Chip>
+      );
+    case 'closed':
+      return (
+        <Chip color="danger">
+          <XCircle size={12} />
+          <Chip.Label>Closed</Chip.Label>
+        </Chip>
+      );
+    default:
+      return (
+        <Chip color="default">
+          <span className="chip-dot" />
+          <Chip.Label>{status}</Chip.Label>
+        </Chip>
+      );
+  }
+};
+
+const renderPriorityChip = (priority) => {
+  switch (priority) {
+    case 'urgent':
+      return (
+        <Chip color="danger">
+          <span className="chip-dot" />
+          <Chip.Label>Urgent</Chip.Label>
+        </Chip>
+      );
+    case 'high':
+      return (
+        <Chip color="warning">
+          <span className="chip-dot" />
+          <Chip.Label>High</Chip.Label>
+        </Chip>
+      );
+    case 'medium':
+      return (
+        <Chip color="default">
+          <span className="chip-dot" />
+          <Chip.Label>Medium</Chip.Label>
+        </Chip>
+      );
+    case 'low':
+      return (
+        <Chip color="accent">
+          <span className="chip-dot" />
+          <Chip.Label>Low</Chip.Label>
+        </Chip>
+      );
+    default:
+      return (
+        <Chip color="default">
+          <span className="chip-dot" />
+          <Chip.Label>{priority}</Chip.Label>
+        </Chip>
+      );
+  }
+};
+
 const FILTERS = ['All', 'Open', 'Escalated', 'Resolved', 'Closed'];
 
 const Tickets = ({ onNavigateToInbox }) => {
   const { user } = useAuth();
   const [filter, setFilter] = useState('All');
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -80,16 +169,30 @@ const Tickets = ({ onNavigateToInbox }) => {
     }
   }, [filter]);
 
-  const filtered = filter === 'All'
-    ? (tickets || [])
-    : (tickets || []).filter(t => t.status === filter.toLowerCase());
+  const filtered = (tickets || [])
+    .filter(t => filter === 'All' || t.status === filter.toLowerCase())
+    .filter(t => {
+      if (assignmentFilter === 'mine') {
+        const assignedUserId = t.assignedTo?._id || t.assignedTo;
+        return String(assignedUserId) === String(user?._id || user?.id);
+      }
+      return true;
+    });
 
   const handleTicketClick = (ticket) => {
-    console.log('Ticket clicked:', ticket); // Debug log
+    console.log('Ticket clicked:', ticket);
     
-    // If ticket is already assigned to someone, go directly to inbox
-    if (ticket.assignedTo || (ticket.assignedAgent && ticket.assignedAgent !== 'Unassigned')) {
-      onNavigateToInbox && onNavigateToInbox(ticket._id);
+    const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+    const isAssigned = !!assignedUserId;
+    const isAssignedToMe = String(assignedUserId) === String(user?.id || user?._id);
+    const isCompanyOwner = user?.role === 'company_admin';
+
+    if (isAssigned) {
+      if (isCompanyOwner || isAssignedToMe) {
+        onNavigateToInbox && onNavigateToInbox(ticket._id);
+      } else {
+        alert("Access Denied: This ticket is assigned to another agent.");
+      }
       return;
     }
 
@@ -101,11 +204,12 @@ const Tickets = ({ onNavigateToInbox }) => {
   const handleAssignTicket = async () => {
     if (!selectedTicket) return;
 
-    console.log('Assigning ticket:', selectedTicket._id, 'to user:', user?._id);
+    const currentUserId = user?.id || user?._id;
+    console.log('Assigning ticket:', selectedTicket._id, 'to user:', currentUserId);
 
     try {
       const response = await apiService.updateTicket(selectedTicket._id, {
-        assignedTo: user?._id, // Use actual user ID
+        assignedTo: currentUserId, // Use actual user ID
         status: 'in_progress' // Change status to in_progress when assigned
       });
 
@@ -219,22 +323,75 @@ const Tickets = ({ onNavigateToInbox }) => {
 
       <div className="tickets__toolbar">
         <div className="tickets__filters">
-          {FILTERS.map(f => (
-            <button
-              key={f}
-              className={`tickets__filter ${filter === f ? 'tickets__filter--active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
+          {FILTERS.map(f => {
+            const isActive = filter === f;
+            
+            let chipColor = 'default';
+            let icon = null;
+            
+            switch (f.toLowerCase()) {
+              case 'resolved':
+                chipColor = 'success';
+                icon = <CheckCircle2 size={12} />;
+                break;
+              case 'open':
+                chipColor = 'default';
+                icon = <span className="chip-dot" />;
+                break;
+              case 'escalated':
+              case 'closed':
+                chipColor = 'danger';
+                icon = <XCircle size={12} />;
+                break;
+              case 'all':
+              default:
+                chipColor = 'accent';
+                icon = null;
+                break;
+            }
+            
+            return (
+              <button
+                key={f}
+                className="tickets__filter-btn"
+                onClick={() => setFilter(f)}
+                type="button"
+              >
+                <Chip 
+                  color={isActive ? chipColor : 'default'} 
+                  className={!isActive ? 'tickets__filter-chip--inactive' : ''}
+                >
+                  {icon}
+                  <Chip.Label>{f}</Chip.Label>
+                </Chip>
+              </button>
+            );
+          })}
         </div>
-        <button 
-          className="db-btn db-btn--primary"
-          onClick={handleNewTicketClick}
-        >
-          + New Ticket
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="tickets__toggle-group">
+            <button 
+              type="button"
+              className={`tickets__toggle-btn ${assignmentFilter === 'all' ? 'tickets__toggle-btn--active' : ''}`}
+              onClick={() => setAssignmentFilter('all')}
+            >
+              All Tickets
+            </button>
+            <button 
+              type="button"
+              className={`tickets__toggle-btn ${assignmentFilter === 'mine' ? 'tickets__toggle-btn--active' : ''}`}
+              onClick={() => setAssignmentFilter('mine')}
+            >
+              My Tickets
+            </button>
+          </div>
+          <button 
+            className="db-btn db-btn--primary"
+            onClick={handleNewTicketClick}
+          >
+            + New Ticket
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -281,14 +438,14 @@ const Tickets = ({ onNavigateToInbox }) => {
                 >
                   <td className="tickets__id">{t.ticketNumber || t.id}</td>
                   <td className="tickets__customer">{t.customerName || t.customer?.name || t.customer}</td>
-                  <td><span className={`badge badge--${STATUS_COLOR[t.status]}`}>{t.status}</span></td>
+                  <td>{renderStatusChip(t.status)}</td>
                   <td className="tickets__agent">
                     {t.assignedTo 
                       ? `${t.assignedTo.firstName} ${t.assignedTo.lastName}` 
                       : (t.assignedAgent || 'Unassigned')
                     }
                   </td>
-                  <td><span className={`badge badge--${PRI_COLOR[t.priority]}`}>{t.priority}</span></td>
+                  <td>{renderPriorityChip(t.priority)}</td>
                   <td className="tickets__time">{t.createdAt ? new Date(t.createdAt).toLocaleDateString() : t.created}</td>
                 </tr>
               ))}

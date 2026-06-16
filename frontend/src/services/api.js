@@ -71,11 +71,13 @@ class ApiService {
       // Handle 401 - unauthorized (token expired/invalid)
       if (response.status === 401) {
         this.clearAuth();
-        // Redirect to login if we're in a browser environment
-        if (typeof window !== 'undefined') {
+        // Redirect to login if we're in a browser environment and not already on the login page or trying to log in
+        const isLoginEndpoint = endpoint.includes('/auth/login');
+        const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+        if (typeof window !== 'undefined' && !isLoginPage && !isLoginEndpoint) {
           window.location.href = '/login';
         }
-        throw new ApiError('Authentication required', 401);
+        throw new ApiError(data.message || 'Authentication required', 401);
       }
 
       // Handle rate limiting

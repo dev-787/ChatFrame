@@ -144,20 +144,22 @@ const AccountDetails = ({ formData, updateForm, onNext, onBack, showBack, onSubm
         <div className="ob-field__helper">
           Minimum 8 characters, including uppercase letter and number
         </div>
-        <input
-          type={show.password ? "text" : "password"}
-          placeholder="Create a strong password"
-          value={f.password || ""}
-          onChange={set("password")}
-          onFocus={() => setIsPasswordFocused(true)}
-          onBlur={() => {
-            handleBlur('password');
-            setIsPasswordFocused(false);
-          }}
-        />
-        <button type="button" className="ob-field__eye" onClick={() => setShow(s => ({ ...s, password: !s.password }))}>
-          <EyeIcon open={show.password} />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <input
+            type={show.password ? "text" : "password"}
+            placeholder="Create a strong password"
+            value={f.password || ""}
+            onChange={set("password")}
+            onFocus={() => setIsPasswordFocused(true)}
+            onBlur={() => {
+              handleBlur('password');
+              setIsPasswordFocused(false);
+            }}
+          />
+          <button type="button" className="ob-field__eye" onClick={() => setShow(s => ({ ...s, password: !s.password }))}>
+            <EyeIcon open={show.password} />
+          </button>
+        </div>
         {allErrors.password && <span className="ob-field__error">{allErrors.password}</span>}
         
         {(isPasswordFocused || f.password) && (
@@ -167,16 +169,18 @@ const AccountDetails = ({ formData, updateForm, onNext, onBack, showBack, onSubm
 
       <div className={`ob-field ob-field--password ob-field--${getFieldState('confirmPassword')}`}>
         <label>Confirm password</label>
-        <input
-          type={show.confirm ? "text" : "password"}
-          placeholder="Re-enter password"
-          value={f.confirmPassword || ""}
-          onChange={set("confirmPassword")}
-          onBlur={() => handleBlur('confirmPassword')}
-        />
-        <button type="button" className="ob-field__eye" onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))}>
-          <EyeIcon open={show.confirm} />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <input
+            type={show.confirm ? "text" : "password"}
+            placeholder="Re-enter password"
+            value={f.confirmPassword || ""}
+            onChange={set("confirmPassword")}
+            onBlur={() => handleBlur('confirmPassword')}
+          />
+          <button type="button" className="ob-field__eye" onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))}>
+            <EyeIcon open={show.confirm} />
+          </button>
+        </div>
         {allErrors.confirmPassword && <span className="ob-field__error">{allErrors.confirmPassword}</span>}
       </div>
 

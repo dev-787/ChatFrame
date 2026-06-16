@@ -1,7 +1,6 @@
 import './Sidebar.scss';
 import {
   LayoutDashboard,
-  Inbox,
   Ticket,
   BarChart3,
   Bot,
@@ -21,7 +20,6 @@ const NAV = [
     group: 'OVERVIEW',
     items: [
       { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-      { id: 'inbox',        label: 'Inbox',         icon: Inbox },
       { id: 'tickets',      label: 'Tickets',       icon: Ticket },
       { id: 'analytics',    label: 'Analytics',     icon: BarChart3 },
     ],
