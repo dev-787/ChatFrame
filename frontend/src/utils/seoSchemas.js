@@ -4,7 +4,7 @@
  * Used by SEOHead component for per-page injection.
  */
 
-const BASE_URL = 'https://chatframe.com';
+const BASE_URL = 'https://chatframe101.vercel.app';
 
 // ─── Organization ───────────────────────────────────────────────────────────
 export const ORGANIZATION_SCHEMA = {
