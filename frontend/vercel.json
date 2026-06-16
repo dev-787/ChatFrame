@@ -1,6 +1,11 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/sitemap.xml",  "dest": "/sitemap.xml"  },
+    { "src": "/robots.txt",   "dest": "/robots.txt"   },
+    { "src": "/favicon.svg",  "dest": "/favicon.svg"  },
+    { "src": "/og-image.png", "dest": "/og-image.png" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
     {
