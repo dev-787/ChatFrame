@@ -24,3 +24,10 @@ build
 test-widget*.html
 debug-widget*.html
 simple-widget*.html
+test-all-features.html
+
+# Plan and checklist documents
+AI_FIX_ACTION_PLAN.md
+AI_NOT_WORKING_FIX.md
+RENDER_ENV_CHECKLIST.md
+SESSION_OPTIMIZATION_PLAN.md
