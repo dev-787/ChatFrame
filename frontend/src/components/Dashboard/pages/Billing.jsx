@@ -22,8 +22,8 @@ const PLANS = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Unlock powerful AI support features',
-    monthlyPrice: 29,
-    yearlyPrice: 22,
+    monthlyPrice: 1200,
+    yearlyPrice: 1000,
     popular: true,
     cta: 'Coming Soon',
     features: [
@@ -39,8 +39,8 @@ const PLANS = [
     id: 'enterprise',
     name: 'Enterprise',
     tagline: 'Full control for large-scale teams',
-    monthlyPrice: 99,
-    yearlyPrice: 79,
+    monthlyPrice: 2500,
+    yearlyPrice: 2200,
     cta: 'Contact Sales',
     features: [
       'Everything in Pro',
@@ -74,7 +74,7 @@ const Billing = () => {
         </button>
         <span className={`billing__toggle-label${yearly ? ' active' : ''}`}>
           Yearly
-          <span className="billing__save-badge">Save 25%</span>
+          <span className="billing__save-badge">Save up to 16%</span>
         </span>
       </div>
 
@@ -104,7 +104,7 @@ const Billing = () => {
                   <span className="billing__price-free">Free</span>
                 ) : (
                   <>
-                    <span className="billing__price-dollar">$</span>
+                    <span className="billing__price-currency">₹</span>
                     <span className="billing__price-num">{price}</span>
                     <span className="billing__price-period">/mo</span>
                   </>
