@@ -37,17 +37,32 @@ const getAnalyticsOverview = async (tenantId, range = "30d") => {
   ]);
 
   // ── AI vs Human ────────────────────────────────────────────────
-  const [aiStats] = await Ticket.aggregate([
-    { $match: { tenantId, createdAt: { $gte: since } } },
+  const messageStats = await Message.aggregate([
+    {
+      $match: {
+        tenantId,
+        createdAt: { $gte: since },
+        senderType: { $in: ["ai", "agent"] },
+      },
+    },
     {
       $group: {
-        _id: null,
-        total: { $sum: 1 },
-        aiHandled: { $sum: { $cond: ["$isAiHandled", 1, 0] } },
-        escalated: { $sum: { $cond: [{ $eq: ["$status", "escalated"] }, 1, 0] } },
+        _id: "$senderType",
+        count: { $sum: 1 },
       },
     },
   ]);
+
+  const escalatedCount = await Ticket.countDocuments({
+    tenantId,
+    createdAt: { $gte: since },
+    status: "escalated",
+  });
+
+  const totalTicketsCount = await Ticket.countDocuments({
+    tenantId,
+    createdAt: { $gte: since },
+  });
 
   // ── Agent performance ──────────────────────────────────────────
   const agentPerformance = await Ticket.aggregate([
@@ -137,21 +152,31 @@ const getAnalyticsOverview = async (tenantId, range = "30d") => {
     { $project: { date: "$_id", avg: { $round: ["$avg", 1] }, count: 1, _id: 0 } },
   ]);
 
-  const totalTickets = aiStats?.total || 0;
-  const aiHandled = aiStats?.aiHandled || 0;
+  let aiMessages = 0;
+  let humanMessages = 0;
+
+  messageStats.forEach((stat) => {
+    if (stat._id === "ai") {
+      aiMessages = stat.count;
+    } else if (stat._id === "agent") {
+      humanMessages = stat.count;
+    }
+  });
+
+  const totalMessages = aiMessages + humanMessages;
 
   return {
     volumeByDay,
     statusBreakdown,
     channelBreakdown,
     aiVsHuman: {
-      aiHandled,
-      humanHandled: totalTickets - aiHandled,
-      escalationRate: totalTickets > 0
-        ? Math.round(((aiStats?.escalated || 0) / totalTickets) * 100)
+      aiHandled: aiMessages,
+      humanHandled: humanMessages,
+      escalationRate: totalTicketsCount > 0
+        ? Math.round((escalatedCount / totalTicketsCount) * 100)
         : 0,
-      aiRate: totalTickets > 0
-        ? Math.round((aiHandled / totalTickets) * 100)
+      aiRate: totalMessages > 0
+        ? Math.round((aiMessages / totalMessages) * 100)
         : 0,
     },
     agentPerformance,
