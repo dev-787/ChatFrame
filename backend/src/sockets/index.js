@@ -1,14 +1,21 @@
 const { verifyAccessToken } = require("../utils/jwt");
 const { getCachedUserSession, cacheUserSession, invalidateUserSession } = require("../services/redisService");
 const { getRedis } = require("../config/redis");
+const { parseCookies } = require("../utils/cookies");
+const logger = require("../utils/logger");
 
 const initSockets = (io) => {
   // ─── Auth middleware ───────────────────────────────────────────
   io.use(async (socket, next) => {
     try {
-      const token =
+      let token =
         socket.handshake.auth?.token ||
         socket.handshake.headers?.authorization?.split(" ")[1];
+
+      if (!token && socket.handshake.headers?.cookie) {
+        const cookies = parseCookies(socket.handshake.headers.cookie);
+        token = cookies.token;
+      }
 
       if (!token) return next(new Error("Authentication token is required."));
 
@@ -35,7 +42,7 @@ const initSockets = (io) => {
   io.on("connection", async (socket) => {
     const { userId, tenantId, role } = socket.user;
 
-    console.log(`🔌 Connected: userId=${userId} role=${role} tenantId=${tenantId}`);
+    logger.info(`🔌 Connected: userId=${userId} role=${role} tenantId=${tenantId}`);
 
     // Join tenant room (scoped broadcasts)
     if (tenantId) socket.join(`tenant:${tenantId}`);
@@ -51,13 +58,13 @@ const initSockets = (io) => {
       // Broadcast updated online presence to tenant
       io.to(`tenant:${tenantId}`).emit("agent:online", { userId });
     } catch (err) {
-      console.error("Redis presence error:", err.message);
+      logger.error("Redis presence error:", { message: err.message });
     }
 
     // ── Join a specific ticket/conversation room ─────────────────
     socket.on("ticket:join", (ticketId) => {
       socket.join(`ticket:${ticketId}`);
-      console.log(`📨 ${userId} joined ticket room: ${ticketId}`);
+      logger.info(`📨 ${userId} joined ticket room: ${ticketId}`);
     });
 
     socket.on("ticket:leave", (ticketId) => {
@@ -89,7 +96,7 @@ const initSockets = (io) => {
 
     // ── Disconnect ───────────────────────────────────────────────
     socket.on("disconnect", async (reason) => {
-      console.log(`🔌 Disconnected: userId=${userId} reason=${reason}`);
+      logger.info(`🔌 Disconnected: userId=${userId} reason=${reason}`);
 
       try {
         const redis = getRedis();

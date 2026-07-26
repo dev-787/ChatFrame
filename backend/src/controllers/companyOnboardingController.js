@@ -3,6 +3,7 @@ const { createCompanyAdmin } = require("../services/authService");
 const { createTenant } = require("../services/tenantService");
 const SupportConfig = require("../models/SupportConfig");
 const { generateAuthTokens } = require("../utils/jwt");
+const { setAuthCookies } = require("../utils/cookies");
 const {
   setOnboardingSession,
   getOnboardingSession,
@@ -148,6 +149,9 @@ const companyStep4 = asyncHandler(async (req, res) => {
   // 6. Issue JWT
   const tokens = generateAuthTokens(user);
 
+  // Set HTTP-only secure cookies for tokens
+  setAuthCookies(res, tokens);
+
   sendCreated(
     res,
     {
@@ -157,7 +161,6 @@ const companyStep4 = asyncHandler(async (req, res) => {
         inviteCode: tenant.inviteCode,
         companyName: tenant.companyName,
       },
-      tokens,
     },
     "Company onboarding complete. Welcome to ChatFrame!"
   );

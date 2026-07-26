@@ -44,7 +44,7 @@ const Login = () => {
       const response = await apiService.login(formData);
       
       if (response.success) {
-        login(response.data.user, response.data.tokens.accessToken);
+        login(response.data.user);
         
         // Role-based redirect
         const userRole = response.data.user.role;

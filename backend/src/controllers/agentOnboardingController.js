@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const { createSupportAgent } = require("../services/authService");
 const { getTenantByInviteCode } = require("../services/tenantService");
 const { generateAuthTokens } = require("../utils/jwt");
+const { setAuthCookies } = require("../utils/cookies");
 const {
   setOnboardingSession,
   getOnboardingSession,
@@ -73,6 +74,9 @@ const agentStep2 = asyncHandler(async (req, res) => {
   // 4. Issue JWT
   const tokens = generateAuthTokens(user);
 
+  // Set HTTP-only secure cookies for tokens
+  setAuthCookies(res, tokens);
+
   sendCreated(
     res,
     {
@@ -81,7 +85,6 @@ const agentStep2 = asyncHandler(async (req, res) => {
         tenantId: tenant.tenantId,
         companyName: tenant.companyName,
       },
-      tokens,
     },
     `Welcome to ${tenant.companyName}! Your agent account is ready.`
   );

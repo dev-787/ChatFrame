@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
  */
 const signAccessToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
     issuer: "chatframe",
     audience: "chatframe-client",
   });
@@ -14,12 +14,19 @@ const signAccessToken = (payload) => {
 /**
  * Sign a refresh token
  */
-const signRefreshToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
+const signRefreshToken = (payload, expiresInSeconds = null) => {
+  const options = {
     issuer: "chatframe",
     audience: "chatframe-client",
-  });
+  };
+
+  if (expiresInSeconds !== null && expiresInSeconds > 0) {
+    options.expiresIn = expiresInSeconds;
+  } else {
+    options.expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
+  }
+
+  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, options);
 };
 
 /**
@@ -53,18 +60,29 @@ const buildTokenPayload = (user) => ({
 });
 
 /**
- * Generate both tokens and return auth response shape
+ * Generate both tokens and return auth response shape.
+ * Bounds refresh token expiration to hard 30-day max session limit.
  */
-const generateAuthTokens = (user) => {
-  const payload = buildTokenPayload(user);
-  const accessToken = signAccessToken(payload);
-  const refreshToken = signRefreshToken(payload);
+const generateAuthTokens = (user, initialLoginAt = null, remainingRefreshSeconds = null) => {
+  const now = Math.floor(Date.now() / 1000);
+  const loginTimestamp = initialLoginAt || now;
+
+  const accessPayload = buildTokenPayload(user);
+
+  const refreshPayload = {
+    ...accessPayload,
+    initialLoginAt: loginTimestamp,
+  };
+
+  const accessToken = signAccessToken(accessPayload);
+  const refreshToken = signRefreshToken(refreshPayload, remainingRefreshSeconds);
 
   return {
     accessToken,
     refreshToken,
     tokenType: "Bearer",
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+    remainingRefreshSeconds,
   };
 };
 

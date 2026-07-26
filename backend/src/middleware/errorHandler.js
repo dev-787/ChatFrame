@@ -35,8 +35,11 @@ const handleValidationError = (err) => {
 const handleJWTError = () =>
   new AppError("Invalid token. Please log in again.", 401);
 
-const handleJWTExpiredError = () =>
-  new AppError("Your session has expired. Please log in again.", 401);
+const handleJWTExpiredError = () => {
+  const err = new AppError("Your session has expired. Please log in again.", 401);
+  err.code = "TOKEN_EXPIRED";
+  return err;
+};
 
 /**
  * Development error response — full stack trace
@@ -45,6 +48,7 @@ const sendDevError = (err, res) => {
   res.status(err.statusCode || 500).json({
     success: false,
     message: err.message,
+    ...(err.code && { code: err.code }),
     error: err,
     stack: err.stack,
   });
@@ -59,6 +63,7 @@ const sendProdError = (err, res) => {
     res.status(err.statusCode).json({
       success: false,
       message: err.message,
+      ...(err.code && { code: err.code }),
       ...(err.errors && { errors: err.errors }),
     });
   } else {

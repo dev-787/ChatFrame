@@ -12,12 +12,29 @@ const widgetRoutes = require("./widgetRoutes");
 
 // ─── Services ─────────────────────────────────────────────────────
 const aiService = require("../services/aiService");
+const logger = require("../utils/logger");
 
 // ─── Public Routes (no auth required) ────────────────────────────
 router.use("/auth", authRoutes);
 router.use("/onboard/company", companyOnboardingRoutes);
 router.use("/onboard/agent", agentOnboardingRoutes);
 router.use("/widget", widgetRoutes);
+
+// Dev logger bridge — receives frontend logs and prints them to terminal
+router.post("/dev/log", (req, res) => {
+  const { level = "info", message, meta, source = "browser" } = req.body;
+  const tag = `[${source.toUpperCase()}]`;
+
+  if (level === "error") {
+    logger.error(`${tag} ${message}`, meta || {});
+  } else if (level === "warn") {
+    logger.warn(`${tag} ${message}`, meta || {});
+  } else {
+    logger.info(`${tag} ${message}`, meta || {});
+  }
+
+  res.json({ success: true });
+});
 
 // Health check (public)
 router.get("/health", (req, res) => {
