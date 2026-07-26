@@ -17,7 +17,7 @@ class ApiError extends Error {
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = this.getStoredToken();
+    this.refreshPromise = null;
   }
 
   // Validate MongoDB ObjectId
@@ -25,26 +25,40 @@ class ApiService {
     return id && typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
   }
 
-  // Token management
+  // Tokens are stored exclusively in HttpOnly cookies (inaccessible to JS by design).
+  // The browser automatically attaches them via credentials:'include' on every request.
   getStoredToken() {
-    return localStorage.getItem('cf_token');
+    return null;
   }
 
-  setToken(token) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('cf_token', token);
+  isLoggedIn() {
+    return localStorage.getItem('cf_logged_in') === 'true';
+  }
+
+  setLoggedIn(status) {
+    if (status) {
+      localStorage.setItem('cf_logged_in', 'true');
     } else {
-      localStorage.removeItem('cf_token');
+      localStorage.removeItem('cf_logged_in');
     }
   }
 
   clearAuth() {
-    this.setToken(null);
+    this.setLoggedIn(false);
   }
 
   isAuthenticated() {
-    return !!this.token;
+    return this.isLoggedIn();
+  }
+
+  async refresh() {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+    this.refreshPromise = this.post('/auth/refresh').finally(() => {
+      this.refreshPromise = null;
+    });
+    return this.refreshPromise;
   }
 
   // Enhanced request wrapper with proper error handling
@@ -52,6 +66,7 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     
     const config = {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -59,20 +74,27 @@ class ApiService {
       ...options,
     };
 
-    // Add auth header if token exists
-    if (this.token) {
-      config.headers.Authorization = `Bearer ${this.token}`;
-    }
-
     try {
       const response = await fetch(url, config);
       const data = await response.json();
 
       // Handle 401 - unauthorized (token expired/invalid)
       if (response.status === 401) {
+        const isLoginEndpoint = endpoint.includes('/auth/login');
+        const isRefreshEndpoint = endpoint.includes('/auth/refresh');
+
+        // Silent auto-refresh if token expired and request hasn't been retried yet
+        if (data.code === 'TOKEN_EXPIRED' && !options._isRetry && !isLoginEndpoint && !isRefreshEndpoint) {
+          try {
+            await this.refresh();
+            return await this.request(endpoint, { ...options, _isRetry: true });
+          } catch (refreshErr) {
+            // Refresh failed (e.g. refresh token expired/revoked) — clear auth & redirect
+          }
+        }
+
         this.clearAuth();
         // Redirect to login if we're in a browser environment and not already on the login page or trying to log in
-        const isLoginEndpoint = endpoint.includes('/auth/login');
         const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
         if (typeof window !== 'undefined' && !isLoginPage && !isLoginEndpoint) {
           window.location.href = '/login';
@@ -163,8 +185,8 @@ class ApiService {
   // Authentication endpoints
   async login(credentials) {
     const response = await this.post('/auth/login', credentials);
-    if (response.success && response.data.tokens) {
-      this.setToken(response.data.tokens.accessToken);
+    if (response.success) {
+      this.setLoggedIn(true);
     }
     return response;
   }
@@ -198,8 +220,8 @@ class ApiService {
 
   async companyOnboardingStep4(data) {
     const response = await this.post('/onboard/company/step-4', data);
-    if (response.success && response.data.tokens) {
-      this.setToken(response.data.tokens.accessToken);
+    if (response.success) {
+      this.setLoggedIn(true);
     }
     return response;
   }
@@ -211,8 +233,8 @@ class ApiService {
 
   async agentOnboardingStep2(data) {
     const response = await this.post('/onboard/agent/step-2', data);
-    if (response.success && response.data.tokens) {
-      this.setToken(response.data.tokens.accessToken);
+    if (response.success) {
+      this.setLoggedIn(true);
     }
     return response;
   }

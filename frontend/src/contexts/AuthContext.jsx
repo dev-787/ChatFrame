@@ -28,15 +28,15 @@ export const AuthProvider = ({ children }) => {
 
   const initializeAuth = async () => {
     try {
-      const token = apiService.getStoredToken();
+      const loggedIn = apiService.isLoggedIn();
       
-      if (token) {
-        // Verify token is still valid by fetching user profile
+      if (loggedIn) {
+        // Verify token is still valid by fetching user profile (browser attaches cookie)
         const response = await apiService.getUserProfile();
         if (response.success) {
           setUser(response.data.user);
         } else {
-          // Token is invalid, clear it
+          // Session is invalid, clear it
           apiService.clearAuth();
         }
       }
@@ -53,10 +53,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (userData, token) => {
-    if (token) {
-      apiService.setToken(token);
-    }
+  const login = (userData) => {
+    apiService.setLoggedIn(true);
     setUser(userData);
   };
 
@@ -85,7 +83,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => {
-    return !!user && !!apiService.getStoredToken();
+    return !!user;
   };
 
   const hasRole = (role) => {

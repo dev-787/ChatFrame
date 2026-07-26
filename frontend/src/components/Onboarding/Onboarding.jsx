@@ -262,7 +262,7 @@ const Onboarding = () => {
       
       if (response.success) {
         // Save auth data and redirect
-        login(response.data.user, response.data.tokens.accessToken);
+        login(response.data.user);
         setDone(true);
         
         // Redirect after showing success screen
@@ -291,7 +291,7 @@ const Onboarding = () => {
       
       if (response.success) {
         // Save auth data and redirect
-        login(response.data.user, response.data.tokens.accessToken);
+        login(response.data.user);
         setDone(true);
         
         // Redirect after showing success screen

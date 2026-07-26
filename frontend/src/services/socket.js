@@ -5,6 +5,7 @@
 
 import { io } from 'socket.io-client';
 import apiService from './api';
+import logger from '../utils/logger';
 
 // Derive socket URL — extract just the origin (protocol + host, no path)
 // e.g. https://chatframe-y2j7.onrender.com/api → https://chatframe-y2j7.onrender.com
@@ -26,19 +27,20 @@ class SocketService {
   }
 
   connect() {
-    const token = apiService.getStoredToken();
-    
-    if (!token) {
-      console.warn('No auth token available for socket connection');
+    // Guard: don't open a second socket if one is already alive.
+    if (this.socket) {
+      return;
+    }
+
+    if (!apiService.isLoggedIn()) {
+      logger.warn('User is not logged in, skipping socket connection');
       return;
     }
 
     this.socket = io(SOCKET_URL, {
-      auth: {
-        token: token
-      },
+      withCredentials: true,
       path: '/socket.io',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
@@ -53,18 +55,18 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket.id);
+      logger.info(`Socket connected: ${this.socket.id}`);
       this.connected = true;
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    this.socket.on('disconnect', (reason) => {
+      logger.info(`Socket disconnected: ${reason}`);
       this.connected = false;
       this.stopHeartbeat();
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      logger.error('Socket connection error:', { message: error?.message });
       this.connected = false;
     });
   }
@@ -97,7 +99,7 @@ class SocketService {
   // Inbox methods
   joinTicket(ticketId) {
     if (this.socket && this.connected) {
-      console.log("Joining ticket room:", ticketId);
+      logger.info(`Joining ticket room: ${ticketId}`);
       this.socket.emit('ticket:join', { ticketId });
     }
   }

@@ -2,26 +2,35 @@ const { verifyAccessToken } = require("../utils/jwt");
 const { User } = require("../models/User");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
+const { parseCookies } = require("../utils/cookies");
 
 /**
  * authMiddleware — verifies the JWT from the Authorization header
- * and attaches the decoded user to req.user.
+ * or HTTP-only cookies and attaches the decoded user to req.user.
  */
 const authMiddleware = asyncHandler(async (req, res, next) => {
+  let token;
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new AppError("Authentication token is missing or malformed", 401);
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (req.headers.cookie) {
+    const cookies = parseCookies(req.headers.cookie);
+    token = cookies.token;
   }
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    throw new AppError("Authentication token is missing or malformed", 401);
+  }
 
   let decoded;
   try {
     decoded = verifyAccessToken(token);
   } catch (err) {
     if (err.name === "TokenExpiredError") {
-      throw new AppError("Your session has expired. Please log in again.", 401);
+      const expiredError = new AppError("Your session has expired.", 401);
+      expiredError.code = "TOKEN_EXPIRED";
+      throw expiredError;
     }
     throw new AppError("Invalid authentication token.", 401);
   }

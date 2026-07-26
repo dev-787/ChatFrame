@@ -46,6 +46,14 @@ const aiConfigSchema = new mongoose.Schema(
       type: Number,
       default: 5,
     },
+    knowledgeBaseText: {
+      type: String,
+      default: "",
+    },
+    knowledgeBaseUrl: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
