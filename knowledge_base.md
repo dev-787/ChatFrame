@@ -186,65 +186,49 @@ Attach lineage metadata to every chunk so you can trace it back:
 
 ## 5. Step 4 — Embedding model
 
-Given you're already on `@google/generative-ai` for Gemini, use Google's
-`text-embedding-004` (768 dimensions) for embeddings — one provider, one API key,
-one bill, and no cross-provider latency. It's a strong general-purpose embedding model
-and is priced for high-volume use, which matters since you'll re-embed on every KB
-update.
+ChatFrame uses **Pinecone's integrated embedding** with `llama-text-embed-v2` (1024 dimensions, cosine metric).
+Instead of manually generating vectors client-side via Gemini or OpenAI, raw chunk text is pushed directly to Pinecone using `index.namespace(tenantId).upsertRecords()`. Pinecone computes `passage` embeddings server-side upon record upsert, and computes `query` embeddings server-side upon calling `index.namespace(tenantId).searchRecords()`.
 
-Alternative if you ever want a swap: OpenAI `text-embedding-3-small` (1536 dim,
-cheap, excellent quality) — but only worth the added provider complexity if you find
-Google's embeddings underperforming on retrieval quality in testing. Don't add a
-second provider preemptively.
-
-Pick ONE dimension size and lock your Pinecone index to it — switching later means
-re-embedding your entire knowledge base.
+This eliminates client-side embedding generation overhead and ensures zero cross-provider latency.
 
 ---
 
 ## 6. Step 5 — Pinecone schema
 
-Use **one Pinecone index**, tenant isolation via **namespace = tenantId**. This
+Use **one Pinecone index** (`chatframe`), tenant isolation via **namespace = tenantId**. This
 mirrors your existing `tenantId` pattern and is the cleanest multi-tenant approach —
 Pinecone namespaces are cheap, and it makes cross-tenant leakage structurally
-impossible (a query in namespace A physically cannot return namespace B's vectors)
-rather than relying on you remembering a metadata filter every time, like your Mongo
-queries currently do.
+impossible (a query in namespace A physically cannot return namespace B's vectors).
 
 ```js
-await index.namespace(tenantId).upsert([
-  {
-    id: chunkId,
-    values: embeddingVector,
-    metadata: {
+await index.namespace(tenantId).upsertRecords({
+  records: [
+    {
+      _id: chunkId,
+      text: content, // mapped text field for llama-text-embed-v2
       tenantId,
       sourceId,
-      sourceType,
       category,
       title,
       confidence,
       needsReview,
-      contentPreview: content.slice(0, 200), // for debugging in Pinecone console
+      contentPreview: content.slice(0, 200),
     }
-  }
-]);
+  ]
+});
 ```
 
-Store the full `content` in MongoDB against `chunkId`, not in Pinecone metadata — keep
-vectors + light metadata in Pinecone, full text in Mongo, and join by `chunkId` at
-retrieval time. Keeps Pinecone storage lean and lets you update chunk text without
-re-embedding if you're just fixing a typo (only re-embed if the meaning changed).
+Store the full `content` in MongoDB against `chunkId`, not just in Pinecone fields — keep full text in Mongo and join by `chunkId` at retrieval time.
 
 ---
 
 ## 7. Step 6 — Retrieval at query time
 
 When a customer message comes in:
-1. Embed the customer message with the same model (`text-embedding-004`).
-2. Query `index.namespace(tenantId)` for top-k (start with k=4–6).
-3. Filter out any chunk still `needsReview: true` unless it's been approved.
-4. Pull full `content` for those chunk IDs from Mongo.
-5. Inject into the Gemini prompt as clearly delimited, labeled context — e.g.:
+1. Pass the customer message text directly to Pinecone's integrated search: `index.namespace(tenantId).searchRecords({ query: { inputs: { text: customerMessage }, topK: 5 } })`. Pinecone applies `input_type: "query"` automatically.
+2. Filter out any chunk still `needsReview: true` unless it's been approved.
+3. Pull full `content` for those chunk IDs from Mongo.
+4. Inject into the Gemini prompt as clearly delimited, labeled context:
 
 ```
 Here is verified company knowledge relevant to this question. Use it to answer

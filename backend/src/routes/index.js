@@ -54,7 +54,10 @@ router.get("/health", (req, res) => {
   });
 });
 
+const knowledgeBaseRoutes = require("./knowledgeBaseRoutes");
+
 // ─── Protected Routes (auth required) ─────────────────────────────
+router.use("/knowledge-base", knowledgeBaseRoutes);
 router.use("/", dashboardRoutes);
 
 module.exports = router;

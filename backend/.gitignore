@@ -54,3 +54,15 @@ jspm_packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test scripts and debug files
+test-*.js
+create-test-*.js
+create-production-*.js
+diagnose-*.js
+set-widget-*.js
+*.test.js
+*.spec.js
+tests/
+test/
+__tests__/

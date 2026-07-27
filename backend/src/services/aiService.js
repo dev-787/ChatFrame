@@ -1,11 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { searchSimilarChunks } = require('./kbEmbeddingService');
+const { KnowledgeChunk } = require('../models/KnowledgeChunk');
 
 class AIService {
   constructor() {
     this.genAI = null;
     this.model = null;
     this.isEnabled = process.env.AI_AUTO_REPLY_ENABLED === 'true';
-    this.confidenceThreshold = parseFloat(process.env.AI_CONFIDENCE_THRESHOLD) || 0.7;
+    this.confidenceThreshold = parseFloat(process.env.AI_CONFIDENCE_THRESHOLD) || 0.65;
     this.maxRetries = 2;
 
     if (this.isEnabled) {
@@ -28,8 +30,9 @@ class AIService {
         model: 'gemini-flash-lite-latest',
         generationConfig: {
           maxOutputTokens: 1000,
-          temperature: 0.7,
+          temperature: 0.2,
           topP: 0.95,
+          responseMimeType: 'application/json',
         },
       });
       console.log('✅ Gemini AI initialized (gemini-flash-lite-latest)');
@@ -44,15 +47,72 @@ class AIService {
   }
 
   /**
+   * Retrieve relevant Knowledge Base chunks and format as grounded context.
+   * Returns { kbContext, topScore }
+   */
+  async _retrieveKnowledgeContext(tenantId, customerMessage) {
+    if (!tenantId || !customerMessage) return { kbContext: '', topScore: 0 };
+
+    try {
+      const matches = await searchSimilarChunks(tenantId, customerMessage, 5);
+      if (!matches || matches.length === 0) return { kbContext: '', topScore: 0 };
+
+      // Exclude chunks with needsReview === true
+      const validMatches = matches.filter((m) => !m.metadata || !m.metadata.needsReview);
+      if (validMatches.length === 0) return { kbContext: '', topScore: 0 };
+
+      const topScore = validMatches[0]?.score || 0;
+      const chunkIds = validMatches.map((m) => m.id);
+
+      // Fetch full text content from Mongo with strict tenant isolation
+      const chunks = await KnowledgeChunk.find({
+        _id: { $in: chunkIds },
+        tenantId,
+        needsReview: false,
+        status: 'active',
+      });
+
+      if (!chunks || chunks.length === 0) return { kbContext: '', topScore: 0 };
+
+      const knowledgeLines = chunks.map(
+        (c) => `[${(c.category || 'GENERAL').toUpperCase()}] ${c.title}: ${c.content}`
+      );
+
+      const kbContext = `Here is verified company knowledge relevant to this question. Use it to answer accurately. If the knowledge doesn't cover the question, say so honestly instead of guessing.
+
+--- KNOWLEDGE ---
+${knowledgeLines.join('\n\n')}
+--- END KNOWLEDGE ---`;
+
+      return { kbContext, topScore };
+    } catch (err) {
+      console.error('❌ Knowledge Base retrieval failed (proceeding without KB):', err.message);
+      return { kbContext: '', topScore: 0 };
+    }
+  }
+
+  /**
    * Generate an AI response for a customer message.
    * Returns null if AI is disabled or an error occurs — caller should assign a human agent.
    */
   async generateResponse(customerMessage, conversationHistory = [], companyContext = {}) {
     if (!this.isAIEnabled()) return null;
 
+    const tenantId = companyContext.tenantId;
+    const { kbContext, topScore } = tenantId
+      ? await this._retrieveKnowledgeContext(tenantId, customerMessage)
+      : { kbContext: '', topScore: 0 };
+
     const systemPrompt = this._buildSystemPrompt(companyContext);
     const conversationContext = this._buildConversationContext(conversationHistory);
-    const fullPrompt = `${systemPrompt}\n\n${conversationContext}\n\nCustomer: ${customerMessage}\n\nAssistant:`;
+
+    const promptParts = [systemPrompt];
+    if (kbContext) promptParts.push(kbContext);
+    promptParts.push(conversationContext);
+    promptParts.push(`Customer Question: ${customerMessage}`);
+    promptParts.push(`Generate your response as JSON output:`);
+
+    const fullPrompt = promptParts.join('\n\n');
 
     let lastError;
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
@@ -61,27 +121,49 @@ class AIService {
 
         const result = await this.model.generateContent(fullPrompt);
         const response = await result.response;
-        
-        // Log the full response for debugging
-        console.log('📝 Raw Gemini response:', JSON.stringify({
-          text: response.text(),
-          candidates: result.response.candidates?.length,
-          finishReason: result.response.candidates?.[0]?.finishReason
-        }));
-        
-        const aiReply = response.text().trim();
+        const responseText = response.text().trim();
 
+        console.log('📝 Raw Gemini response:', JSON.stringify({
+          text: responseText,
+          finishReason: result.response.candidates?.[0]?.finishReason,
+          topScore,
+        }));
+
+        let parsedResponse = { response: responseText, grounded: true, modelConfidence: 0.9 };
+        try {
+          const cleanedJson = responseText
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+          parsedResponse = JSON.parse(cleanedJson);
+        } catch (jsonErr) {
+          // Fallback if response is raw text
+          parsedResponse = { response: responseText, grounded: true, modelConfidence: 0.85 };
+        }
+
+        const aiReply = parsedResponse.response || responseText;
         if (!aiReply) {
-          console.warn('⚠️  Gemini returned an empty response.');
+          console.warn('⚠️ Gemini returned empty response text.');
           return null;
         }
 
-        const confidence = this._calculateConfidence(customerMessage, aiReply);
+        const confidence = this._calculateConfidence({
+          customerMessage,
+          aiReply,
+          topScore,
+          modelConfidence: parsedResponse.confidence || parsedResponse.modelConfidence,
+          grounded: parsedResponse.grounded,
+        });
+
+        const activeThreshold = companyContext.confidenceThreshold !== undefined
+          ? companyContext.confidenceThreshold
+          : this.confidenceThreshold;
 
         return {
           response: aiReply,
           confidence,
-          shouldAutoReply: confidence >= this.confidenceThreshold,
+          shouldAutoReply: confidence >= activeThreshold,
         };
       } catch (error) {
         lastError = error;
@@ -90,7 +172,6 @@ class AIService {
 
         if (!isRetryable || attempt === this.maxRetries) break;
 
-        // Exponential backoff before retry
         await this._sleep(300 * attempt);
       }
     }
@@ -104,40 +185,37 @@ class AIService {
    */
   async shouldAutoReply(customerMessage, conversationHistory = []) {
     if (!this.isAIEnabled()) return false;
-
-    // Don't auto-reply once a human agent has joined
     if (conversationHistory.some(msg => msg.senderType === 'agent')) return false;
-
-    // Skip very short / unclear messages
-    if (!customerMessage || customerMessage.trim().length < 5) return false;
-
+    if (!customerMessage || customerMessage.trim().length < 3) return false;
     return true;
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
   _buildSystemPrompt(companyContext = {}) {
-    if (companyContext.systemPrompt) {
-      const toneString = companyContext.responseTone
-        ? `\nYour response tone should be: ${companyContext.responseTone}.`
-        : '';
-      return `${companyContext.systemPrompt}${toneString}`;
-    }
+    const companyName = companyContext.companyName || 'ChatFrame';
+    const basePrompt = companyContext.systemPrompt
+      ? companyContext.systemPrompt
+      : `You are a professional customer support assistant for ${companyName}.`;
 
-    const companyName = companyContext.companyName || 'our company';
-    const industry = companyContext.industry || '';
-    const extraContext = companyContext.additionalContext
-      ? `\nAdditional context: ${companyContext.additionalContext}`
+    const toneString = companyContext.responseTone
+      ? ` Your response tone should be: ${companyContext.responseTone}.`
       : '';
 
-    return `You are a professional customer support assistant for ${companyName}${industry ? ` (${industry})` : ''}.
+    return `${basePrompt}${toneString}
 
-Rules:
-- Be concise, friendly, and solution-oriented.
-- Keep replies under 120 words.
-- Never fabricate order details, account data, or policies you don't know.
-- If the issue is complex or requires account access, politely say you'll escalate to a human agent.
-- Do not mention that you are an AI unless directly asked.${extraContext}`;
+RESPONSE INSTRUCTIONS:
+You MUST respond with valid JSON in this exact shape:
+{
+  "response": "Your complete, customer-facing support answer here.",
+  "grounded": true or false,
+  "confidence": 0.0 to 1.0
+}
+
+GROUNDING RULES:
+1. If the provided knowledge base context contains sufficient information to answer the customer's question, answer accurately and set "grounded": true with "confidence": 0.90 - 1.0.
+2. If the provided knowledge base context does NOT contain information to answer the question, state politely that the knowledge base does not contain that information and offer to connect them with a support representative. In this case, set "grounded": false and "confidence": 0.20.
+3. Do NOT invent order details, pricing, or company policies not present in the provided knowledge base.`;
   }
 
   _buildConversationContext(conversationHistory) {
@@ -146,7 +224,7 @@ Rules:
     }
 
     const lines = conversationHistory
-      .slice(-6) // last 6 messages for context window efficiency
+      .slice(-6)
       .map(msg => {
         const role =
           msg.senderType === 'customer' ? 'Customer' :
@@ -157,26 +235,33 @@ Rules:
     return `Previous conversation:\n${lines.join('\n')}`;
   }
 
-  _calculateConfidence(customerMessage, aiResponse) {
-    let confidence = 0.55;
+  /**
+   * Redesigned Grounding-Based Confidence Calculation
+   * Evaluates vector retrieval relevance (topScore) + model self-reported grounding.
+   */
+  _calculateConfidence({ customerMessage, aiReply, topScore = 0, modelConfidence = 0.85, grounded = true }) {
+    // 1. Vector Retrieval Relevance Signal (Normalized against empirical ~0.45 score threshold)
+    const normalizedRetrievalScore = Math.min(1.0, topScore / 0.45);
 
-    const commonPatterns = [
-      /how.*work/i, /what.*is/i, /can.*help/i,
-      /problem.*with/i, /need.*help/i, /thank/i, /hello|hi|hey/i,
-    ];
-    if (commonPatterns.some(p => p.test(customerMessage))) confidence += 0.2;
+    // 2. Model Self-Reported Grounding Signal
+    const isHonestDecline = !grounded || /does not contain|don't have information|not in our knowledge/i.test(aiReply);
+    const effectiveModelConfidence = isHonestDecline ? 0.20 : (modelConfidence || 0.85);
 
-    // Shorter, focused responses tend to be more reliable
-    if (aiResponse.length < 250) confidence += 0.1;
+    // 3. Composite Weighted Base Score (50% Retrieval Score + 50% Model Grounding)
+    let confidence = (0.50 * normalizedRetrievalScore) + (0.50 * effectiveModelConfidence);
 
-    // Penalise uncertainty language
+    // 4. Quality Deductions
     const uncertainPhrases = ['not sure', 'might be', 'possibly', 'maybe', 'i think'];
-    if (uncertainPhrases.some(p => aiResponse.toLowerCase().includes(p))) confidence -= 0.1;
+    if (uncertainPhrases.some(p => aiReply.toLowerCase().includes(p))) {
+      confidence -= 0.10;
+    }
 
-    // Penalise very short customer messages (likely ambiguous)
-    if (customerMessage.trim().length < 10) confidence -= 0.2;
+    // 5. Honest Decline Cap (Ensures unsupported queries cap at 0.35 to trigger human escalation)
+    if (isHonestDecline) {
+      confidence = Math.min(0.35, confidence);
+    }
 
-    return Math.max(0.1, Math.min(0.95, confidence));
+    return Math.round(Math.max(0.05, Math.min(0.98, confidence)) * 100) / 100;
   }
 
   /**
@@ -186,7 +271,7 @@ Rules:
     if (!this.isAIEnabled()) return null;
 
     const lines = conversationHistory
-      .slice(-10) // Limit to last 10 messages for summary context
+      .slice(-10)
       .map(msg => {
         const role =
           msg.senderType === 'customer' ? 'Customer' :
@@ -203,7 +288,8 @@ Summary:`;
 
     try {
       console.log('🤖 Generating chat summary...');
-      const result = await this.model.generateContent(prompt);
+      const summaryModel = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
+      const result = await summaryModel.generateContent(prompt);
       const response = await result.response;
       return response.text().trim();
     } catch (error) {
@@ -213,7 +299,6 @@ Summary:`;
   }
 
   _isRetryableError(error) {
-    // Retry on rate limits and transient server errors
     const retryableCodes = [429, 500, 502, 503, 504];
     return retryableCodes.includes(error?.status) ||
       /rate limit|quota|timeout|network/i.test(error?.message || '');

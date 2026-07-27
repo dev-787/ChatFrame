@@ -390,6 +390,7 @@ router.post("/message", asyncHandler(async (req, res) => {
             message,
             conversationHistory,
             {
+              tenantId: ticket.tenantId,
               companyName: config.companyName || 'ChatFrame',
               systemPrompt: aiConfig.systemPrompt,
               responseTone: aiConfig.responseTone

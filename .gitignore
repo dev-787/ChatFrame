@@ -20,11 +20,31 @@ build
 .vscode
 .idea
 
-# Widget testing files
+# Widget testing files and scripts
 test-widget*.html
 debug-widget*.html
 simple-widget*.html
 test-all-features.html
+test-*.html
+test-*.js
+backend/test-*.js
+create-test-*.js
+backend/create-test-*.js
+create-production-*.js
+backend/create-production-*.js
+diagnose-*.js
+backend/diagnose-*.js
+set-widget-*.js
+backend/set-widget-*.js
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.jsx
+tests/
+test/
+__tests__/
 
 # Plan and checklist documents
 AI_FIX_ACTION_PLAN.md
