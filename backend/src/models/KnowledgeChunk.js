@@ -60,6 +60,10 @@ const knowledgeChunkSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    alternatePhrasings: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

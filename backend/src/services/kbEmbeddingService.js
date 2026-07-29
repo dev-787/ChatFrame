@@ -15,9 +15,13 @@ const embedAndUpsertChunk = async (chunkDoc, forceApproved = false) => {
   try {
     const chunkIdStr = chunkDoc._id.toString();
 
+    const embeddingText = chunkDoc.content + (chunkDoc.alternatePhrasings?.length
+      ? `. Also referred to as: ${chunkDoc.alternatePhrasings.join(", ")}`
+      : "");
+
     const record = {
       _id: chunkIdStr,
-      text: chunkDoc.content,
+      text: embeddingText,
       tenantId: chunkDoc.tenantId,
       sourceId: chunkDoc.sourceId.toString(),
       category: chunkDoc.category || "general",
@@ -56,17 +60,22 @@ const batchEmbedAndUpsertChunks = async (chunkDocs = [], forceApproved = false) 
     return [];
   }
 
-  const recordsToUpsert = eligibleChunks.map((chunk) => ({
-    _id: chunk._id.toString(),
-    text: chunk.content,
-    tenantId: chunk.tenantId,
-    sourceId: chunk.sourceId.toString(),
-    category: chunk.category || "general",
-    title: chunk.title || "Knowledge Chunk",
-    confidence: chunk.confidence || "high",
-    needsReview: Boolean(chunk.needsReview),
-    contentPreview: chunk.content.slice(0, 200),
-  }));
+  const recordsToUpsert = eligibleChunks.map((chunk) => {
+    const embeddingText = chunk.content + (chunk.alternatePhrasings?.length
+      ? `. Also referred to as: ${chunk.alternatePhrasings.join(", ")}`
+      : "");
+    return {
+      _id: chunk._id.toString(),
+      text: embeddingText,
+      tenantId: chunk.tenantId,
+      sourceId: chunk.sourceId.toString(),
+      category: chunk.category || "general",
+      title: chunk.title || "Knowledge Chunk",
+      confidence: chunk.confidence || "high",
+      needsReview: Boolean(chunk.needsReview),
+      contentPreview: chunk.content.slice(0, 200),
+    };
+  });
 
   const tenantId = eligibleChunks[0].tenantId;
   const index = getPineconeIndex();
@@ -130,11 +139,14 @@ const searchSimilarChunks = async (tenantId, queryText, topK = 5) => {
       return [];
     }
 
-    return searchResponse.result.hits.map((hit) => ({
+    const hits = searchResponse.result.hits.map((hit) => ({
       id: hit._id,
       score: hit._score,
       metadata: hit.fields || {},
     }));
+
+    hits.sort((a, b) => (b.score || 0) - (a.score || 0));
+    return hits;
   } catch (err) {
     logger.error(`❌ Error in searchRecords for tenant '${tenantId}':`, { message: err.message });
     return [];

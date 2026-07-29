@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { searchSimilarChunks } = require('./kbEmbeddingService');
 const { KnowledgeChunk } = require('../models/KnowledgeChunk');
@@ -29,13 +30,13 @@ class AIService {
       this.model = this.genAI.getGenerativeModel({
         model: 'gemini-flash-lite-latest',
         generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.2,
+          maxOutputTokens: 350,
+          temperature: 0.0,
           topP: 0.95,
           responseMimeType: 'application/json',
         },
       });
-      console.log('✅ Gemini AI initialized (gemini-flash-lite-latest)');
+      console.log('✅ Gemini AI initialized (gemini-flash-lite-latest, temp: 0.0)');
     } catch (error) {
       console.error('❌ Failed to initialize Gemini AI:', error.message);
       this.isEnabled = false;
@@ -48,35 +49,49 @@ class AIService {
 
   /**
    * Retrieve relevant Knowledge Base chunks and format as grounded context.
-   * Returns { kbContext, topScore }
+   * Returns { kbContext, topScore, retrievalError }
    */
   async _retrieveKnowledgeContext(tenantId, customerMessage) {
-    if (!tenantId || !customerMessage) return { kbContext: '', topScore: 0 };
+    if (!tenantId || !customerMessage) return { kbContext: '', topScore: 0, retrievalError: null };
 
     try {
       const matches = await searchSimilarChunks(tenantId, customerMessage, 5);
-      if (!matches || matches.length === 0) return { kbContext: '', topScore: 0 };
+      if (!matches || matches.length === 0) return { kbContext: '', topScore: 0, retrievalError: null };
+
+      // Ensure matches are sorted by score descending
+      matches.sort((a, b) => (b.score || 0) - (a.score || 0));
 
       // Exclude chunks with needsReview === true
       const validMatches = matches.filter((m) => !m.metadata || !m.metadata.needsReview);
-      if (validMatches.length === 0) return { kbContext: '', topScore: 0 };
+      if (validMatches.length === 0) return { kbContext: '', topScore: 0, retrievalError: null };
 
       const topScore = validMatches[0]?.score || 0;
-      const chunkIds = validMatches.map((m) => m.id);
+      let knowledgeLines = [];
 
-      // Fetch full text content from Mongo with strict tenant isolation
-      const chunks = await KnowledgeChunk.find({
-        _id: { $in: chunkIds },
-        tenantId,
-        needsReview: false,
-        status: 'active',
-      });
+      const matchesWithText = validMatches.filter((m) => m.metadata && (m.metadata.text || m.metadata.content));
+      if (matchesWithText.length > 0) {
+        knowledgeLines = matchesWithText.map(
+          (m) => `[${(m.metadata.category || 'GENERAL').toUpperCase()}] ${m.metadata.title || 'Knowledge'}: ${m.metadata.text || m.metadata.content}`
+        );
+      } else {
+        const chunkIds = validMatches.map((m) => m.id);
+        const validObjectIds = chunkIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
 
-      if (!chunks || chunks.length === 0) return { kbContext: '', topScore: 0 };
+        if (validObjectIds.length > 0) {
+          const chunks = await KnowledgeChunk.find({
+            _id: { $in: validObjectIds },
+            tenantId,
+            needsReview: false,
+            status: 'active',
+          }).lean();
 
-      const knowledgeLines = chunks.map(
-        (c) => `[${(c.category || 'GENERAL').toUpperCase()}] ${c.title}: ${c.content}`
-      );
+          knowledgeLines = chunks.map(
+            (c) => `[${(c.category || 'GENERAL').toUpperCase()}] ${c.title}: ${c.content}`
+          );
+        }
+      }
+
+      if (knowledgeLines.length === 0) return { kbContext: '', topScore, retrievalError: null };
 
       const kbContext = `Here is verified company knowledge relevant to this question. Use it to answer accurately. If the knowledge doesn't cover the question, say so honestly instead of guessing.
 
@@ -84,10 +99,11 @@ class AIService {
 ${knowledgeLines.join('\n\n')}
 --- END KNOWLEDGE ---`;
 
-      return { kbContext, topScore };
+      return { kbContext, topScore, retrievalError: null };
     } catch (err) {
-      console.error('❌ Knowledge Base retrieval failed (proceeding without KB):', err.message);
-      return { kbContext: '', topScore: 0 };
+      console.error('💥 CRITICAL: Knowledge Base retrieval system exception!');
+      console.error(err.stack || err);
+      return { kbContext: '', topScore: 0, retrievalError: err.message || String(err) };
     }
   }
 
@@ -98,10 +114,12 @@ ${knowledgeLines.join('\n\n')}
   async generateResponse(customerMessage, conversationHistory = [], companyContext = {}) {
     if (!this.isAIEnabled()) return null;
 
+    console.log(`🔍 [TRACE-2026-07-28-MARKER-1035] generateResponse called for tenantId: '${companyContext.tenantId}' with message: "${customerMessage}"`);
+
     const tenantId = companyContext.tenantId;
-    const { kbContext, topScore } = tenantId
+    const { kbContext, topScore, retrievalError } = tenantId
       ? await this._retrieveKnowledgeContext(tenantId, customerMessage)
-      : { kbContext: '', topScore: 0 };
+      : { kbContext: '', topScore: 0, retrievalError: null };
 
     const systemPrompt = this._buildSystemPrompt(companyContext);
     const conversationContext = this._buildConversationContext(conversationHistory);
@@ -163,7 +181,8 @@ ${knowledgeLines.join('\n\n')}
         return {
           response: aiReply,
           confidence,
-          shouldAutoReply: confidence >= activeThreshold,
+          shouldAutoReply: confidence >= activeThreshold && !retrievalError,
+          retrievalError,
         };
       } catch (error) {
         lastError = error;
@@ -213,7 +232,7 @@ You MUST respond with valid JSON in this exact shape:
 }
 
 GROUNDING RULES:
-1. If the provided knowledge base context contains sufficient information to answer the customer's question, answer accurately and set "grounded": true with "confidence": 0.90 - 1.0.
+1. If the provided knowledge base context contains sufficient information to answer the customer's question, answer accurately and set "grounded": true with "confidence": 1.0.
 2. If the provided knowledge base context does NOT contain information to answer the question, state politely that the knowledge base does not contain that information and offer to connect them with a support representative. In this case, set "grounded": false and "confidence": 0.20.
 3. Do NOT invent order details, pricing, or company policies not present in the provided knowledge base.`;
   }

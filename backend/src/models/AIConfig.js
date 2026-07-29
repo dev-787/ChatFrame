@@ -22,7 +22,7 @@ const aiConfigSchema = new mongoose.Schema(
     },
     confidenceThreshold: {
       type: Number,
-      default: 0.75,
+      default: 0.65,
       min: 0,
       max: 1,
     },

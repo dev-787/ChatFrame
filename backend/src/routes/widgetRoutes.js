@@ -268,6 +268,7 @@ router.get("/config/:widgetKey", asyncHandler(async (req, res) => {
 // Handle widget messages (public endpoint)
 router.post("/message", asyncHandler(async (req, res) => {
   const { widgetKey, message, ticketId } = req.body;
+  console.log(`🔍 [TRACE-2026-07-28-MARKER-1035] POST /message called with widgetKey: '${widgetKey}', message: "${message}"`);
   
   if (!widgetKey || !message) {
     return sendError(res, "Widget key and message are required", 400);
@@ -318,8 +319,24 @@ router.post("/message", asyncHandler(async (req, res) => {
 
   let aiResponse = null;
 
-  // Retrieve or seed AIConfig
-  let aiConfig = await AIConfig.findOne({ tenantId: config.tenantId });
+  // Retrieve AIConfig, AI reply count, and conversation history in parallel
+  const [aiConfigDoc, aiRepliesCount, conversationHistory] = await Promise.all([
+    AIConfig.findOne({ tenantId: config.tenantId }).lean(),
+    Message.countDocuments({
+      ticketId: ticket._id,
+      senderType: 'ai',
+      isAiGenerated: true
+    }),
+    Message.find({
+      tenantId: config.tenantId,
+      ticketId: ticket._id
+    })
+    .sort({ createdAt: 1 })
+    .limit(10)
+    .lean()
+  ]);
+
+  let aiConfig = aiConfigDoc;
   if (!aiConfig) {
     aiConfig = await AIConfig.create({ tenantId: config.tenantId });
   }
@@ -332,12 +349,6 @@ router.post("/message", asyncHandler(async (req, res) => {
   const hasEscalationKeyword = aiConfig.escalationKeywords && aiConfig.escalationKeywords.some(keyword =>
     keyword && messageTextLower.includes(keyword.toLowerCase())
   );
-
-  const aiRepliesCount = await Message.countDocuments({
-    ticketId: ticket._id,
-    senderType: 'ai',
-    isAiGenerated: true
-  });
   const maxRepliesReached = aiRepliesCount >= (aiConfig.maxAiRepliesPerTicket || 5);
 
   let shouldEscalate = false;
@@ -368,15 +379,6 @@ router.post("/message", asyncHandler(async (req, res) => {
     } else {
       // Proceed with AI reply generation
       try {
-        // Get conversation history for context
-        const conversationHistory = await Message.find({ 
-          tenantId: config.tenantId, 
-          ticketId: ticket._id 
-        })
-        .sort({ createdAt: 1 })
-        .limit(10)
-        .lean();
-
         console.log('📜 Conversation history length:', conversationHistory.length);
 
         // Check if AI should respond
@@ -393,42 +395,49 @@ router.post("/message", asyncHandler(async (req, res) => {
               tenantId: ticket.tenantId,
               companyName: config.companyName || 'ChatFrame',
               systemPrompt: aiConfig.systemPrompt,
-              responseTone: aiConfig.responseTone
+              responseTone: aiConfig.responseTone,
+              confidenceThreshold: aiConfig.confidenceThreshold
             }
           );
 
           console.log('📊 AI Result:', aiResult ? `confidence=${aiResult.confidence}, shouldAutoReply=${aiResult.shouldAutoReply}` : 'null');
 
           if (aiResult) {
-            const tenantThreshold = aiConfig.confidenceThreshold !== undefined ? aiConfig.confidenceThreshold : 0.75;
-            const meetsThreshold = aiResult.confidence >= tenantThreshold;
-
-            if (meetsThreshold) {
-              // Create AI response message
-              const aiMessage = await Message.create({
-                tenantId: config.tenantId,
-                ticketId: ticket._id,
-                content: aiResult.response,
-                senderType: 'ai',
-                isAiGenerated: true,
-                aiConfidence: aiResult.confidence
-              });
-
-              aiResponse = aiResult.response;
-              console.log('✅ AI response generated with confidence:', aiResult.confidence);
-
-              if (io) {
-                io.to(`tenant:${config.tenantId}`).emit("message:new", {
-                  ticketId: ticket._id,
-                  message: aiMessage
-                });
-              }
-            } else {
-              console.log(`🤖 AI confidence (${aiResult.confidence}) below threshold (${tenantThreshold})`);
+            if (aiResult.retrievalError) {
+              console.error(`💥 [RETRIEVAL_SYSTEM_ERROR] Ticket ${ticket._id} system retrieval failure: ${aiResult.retrievalError}`);
               if (aiConfig.autoEscalation) {
                 shouldEscalate = true;
-                escalationReason = "low_confidence";
+                escalationReason = "retrieval_system_error";
                 lowConfidenceScore = aiResult.confidence;
+              }
+            } else {
+              if (aiResult.shouldAutoReply) {
+                // Create AI response message
+                const aiMessage = await Message.create({
+                  tenantId: config.tenantId,
+                  ticketId: ticket._id,
+                  content: aiResult.response,
+                  senderType: 'ai',
+                  isAiGenerated: true,
+                  aiConfidence: aiResult.confidence
+                });
+
+                aiResponse = aiResult.response;
+                console.log('✅ AI response generated with confidence:', aiResult.confidence);
+
+                if (io) {
+                  io.to(`tenant:${config.tenantId}`).emit("message:new", {
+                    ticketId: ticket._id,
+                    message: aiMessage
+                  });
+                }
+              } else {
+                console.log(`🤖 AI confidence (${aiResult.confidence}) below threshold or auto-reply not allowed`);
+                if (aiConfig.autoEscalation) {
+                  shouldEscalate = true;
+                  escalationReason = "low_confidence";
+                  lowConfidenceScore = aiResult.confidence;
+                }
               }
             }
           } else {
